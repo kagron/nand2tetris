@@ -1,0 +1,96 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/5/CPU.hdl
+/**
+ * The Hack Central Processing unit (CPU).
+ * Parses the binary code in the instruction input and executes it according to the
+ * Hack machine language specification. In the case of a C-instruction, computes the
+ * function specified by the instruction. If the instruction specifies to read a memory
+ * value, the inM input is expected to contain this value. If the instruction specifies
+ * to write a value to the memory, sets the outM output to this value, sets the addressM
+ * output to the target address, and asserts the writeM output (when writeM = 0, any
+ * value may appear in outM).
+ * If the reset input is 0, computes the address of the next instruction and sets the
+ * pc output to that value. If the reset input is 1, sets pc to 0.
+ * Note: The outM and writeM outputs are combinational: they are affected by the
+ * instruction's execution during the current cycle. The addressM and pc outputs are
+ * clocked: although they are affected by the instruction's execution, they commit to
+ * their new values only in the next cycle.
+ */
+CHIP CPU {
+
+    IN  inM[16],         // M value input  (M = contents of RAM[A])
+        instruction[16], // Instruction for execution
+        reset;           // Signals whether to re-start the current
+                         // program (reset==1) or continue executing
+                         // the current program (reset==0).
+
+    OUT outM[16],        // M value output
+        writeM,          // Write to M? 
+        addressM[15],    // Address in data memory (of M)
+        pc[15];          // address of next instruction
+
+    PARTS:
+	//// Replace this comment with your code.
+    // A Register
+    Not(in=instruction[15], out=aInstruction); // A instruction
+    And(a=instruction[15], b=instruction[5], out=s0); // C & MSB d bit; dest = A
+    Mux16(a=instruction, b=o2, sel=s0, out=aIn); // A input is either the instruction or ALU output
+    Or(a=aInstruction, b=s0, out=l0); // A instruction or dest = A
+    ARegister(in=aIn, load=l0, out=outA, out[0..14]=addressM); // Load A if A instruction or dest = A
+
+    // Write M
+    And(a=true, b=instruction[3], out=wM); // LSB d bit which means dest is M
+    And(a=instruction[15], b=wM, out=writeM); // writeM when C instruction
+    And(a=instruction[15], b=instruction[4], out=l1); // 2nd LSB d bit; dest is D & C instruction
+
+    // D Register
+    Mux16(a=outA, b=inM, sel=instruction[12], out=o1); // A Register or RAM[A]
+    DRegister(in=o2, load=l1, out=outD); // ALU output -> D
+
+    // Are we jumpin?
+    And(a=true, b=instruction[2], out=j2); // Include <0 e.g. JLT, JNE, JLE
+    And(a=true, b=instruction[1], out=j1); // Include 0 e.g. JEQ JGE JLE
+    And(a=true, b=instruction[0], out=j0); // Include >0 JGT, JGE, JNE
+
+    And(a=ozr, b=j1, out=jeqz); // Jump if comp can be zero
+    And(a=ong, b=j2, out=jneg); // Jump if comp can be negative
+    And(a=j3, b=j0, out=jpos); // Jump if comp can be positive
+
+    // zr == 0 & ng == 0 & out[15] == 0
+    Not(in=ozr, out=nonz); // outM is NOT zero
+    Not(in=ong, out=nong); // outM is NOT negative
+    Not(in=neg, out=zmsb); // MSB is 0.  2's complement indicates outM >= 0
+
+    And(a=nonz, b=nong, out=a0); // outM != 0 & outM > 0
+    And(a=a0, b=zmsb, out=j3); // outM != 0 & outM > 0 & MSB is 0
+
+    Or(a=jeqz, b=jneg, out=l2); // Jump if comp <= 0
+    Or(a=l2, b=jpos, out=l3); // Jump at all?
+    
+    And(a=l3, b=instruction[15], out=lpc); // Jump if C Instruction
+
+    PC(in=outA, load=lpc, inc=true, reset=reset, out[0..14]=pc);
+
+    ALU(x=outD,
+        y=o1, 
+        zx=zx, 
+        nx=nx, 
+        zy=zy, 
+        ny=ny, 
+        f=f, 
+        no=no, 
+        out=outM,
+        out=o2,
+        out[15]=neg,
+        zr=ozr, 
+        ng=ong);
+
+    And(a=true, b=instruction[11], out=zx);
+    And(a=true, b=instruction[10], out=nx);
+    And(a=true, b=instruction[9], out=zy);
+    And(a=true, b=instruction[8], out=ny);
+    And(a=true, b=instruction[7], out=f);
+    And(a=true, b=instruction[6], out=no);
+}

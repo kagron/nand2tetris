@@ -1,0 +1,49 @@
+// Fill
+// Listens to Keyboard and writes black in every pixel
+// if key is pressed
+(INIT)
+@n
+M=0
+@m
+M=0
+(LOOP)
+  @KBD
+  D=0
+  D=D-M
+  @BLACK
+  D;JNE
+  @WHITE
+  0;JMP
+(BLACK)
+  @R0
+  M=-1
+  @FILL
+  0;JMP
+(WHITE)
+  @R0
+  M=0
+  @FILL
+  0;JMP
+(FILL)
+  @n
+  D=M
+  @8192
+  D=D-A
+  @INIT
+  D;JEQ
+  @n
+  D=M
+  @SCREEN
+  A=D+A
+  D=A
+  @R1
+  M=D
+  @R0
+  D=M
+  @R1
+  A=M
+  M=D
+  @n
+  M=M+1
+  @FILL
+  0;JMP
