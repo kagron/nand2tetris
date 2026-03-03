@@ -10,7 +10,10 @@ def unset_bit(value: int, bit_index: int) -> int:
     return value & (0 << bit_index)
 
 
-def print_binary(arg: int, str_format: str = "03b") -> str:
+def print_binary(arg: int | None, str_format: str = "03b") -> str:
+    # I didn't feel like dealing with pyright complaining
+    if arg is None:
+        raise ValueError("Arg is None")
     return format(arg, str_format)
 
 

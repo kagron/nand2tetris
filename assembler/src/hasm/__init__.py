@@ -2,6 +2,7 @@ import click
 import io
 import os
 from .parser import Parser
+from .util import set_verbose, print_verbose
 
 
 def validate_ext(ctz, self, value: io.TextIOWrapper | None) -> io.TextIOWrapper | None:
@@ -51,15 +52,16 @@ def hack(filename: io.TextIOWrapper | None, verbose: bool) -> None:
     if len(files) == 0:
         print("No Hack .asm files found in current directory")
         exit(1)
-    if verbose:
-        print(f"Files: {files}")
+    set_verbose(verbose)
+    print_verbose(f"Files: {files}")
 
     for name, content in files.items():
         parser = Parser(name, content, init_symbol_table())
         parser.parse()
-    # for name, content in assembled_files.items():
-    #     try:
-    #         with open(name, "w") as file:
-    #             file.write(content)
-    #     except Exception:
-    #         print(f"Unable to write file {name}")
+        new_name = f"{name[:-4]}.hack"
+        try:
+            with open(new_name, "w") as new_file:
+                for line in parser.parsed_contents:
+                    new_file.write(f"{line}\n")
+        except Exception:
+            print("Error writing file")

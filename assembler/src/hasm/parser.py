@@ -1,6 +1,7 @@
 import re
 
 from . import code
+from .util import print_verbose
 from enum import Enum
 
 
@@ -12,7 +13,7 @@ class InstructionType(Enum):
 
 
 C_IN_RE = "^(?P<dest>[ADM]+=)?(?P<comp>[-!+&01ADM|]+)(?P<jump>;[A-Z]+)?$"
-L_IN_RE = "^\\((?P<jump>[A-Z]+)\\)$"
+L_IN_RE = "^\\((?P<symbol>[A-Z]+)\\)$"
 A_IN_RE = "^@(?P<symbol>[a-zA-Z0-9]+)$"
 
 
@@ -20,21 +21,21 @@ class Parser:
     def __init__(self, filename: str, contents: str, symbol_table: dict[str, int]):
         self.filename = filename
         self.contents = contents.splitlines()
-        print(f"Number of lines: {len(self.contents)}")
-        print(f"Contents: {self.contents}")
+        print_verbose(f"Number of lines: {len(self.contents)}")
+        print_verbose(f"Contents: {self.contents}")
         self.symbol_line_no = -1
         self.actual_line_no = -1
         self.current_line = ""
         self.parsed_contents: list[str] = []
         self.symbol_table = symbol_table
         self.current_stack_no = 16
-        print(symbol_table)
+        print_verbose(symbol_table)
 
     def parse(self) -> dict[str, str]:
         # First Pass
         while self.has_more_lines():
             self.advance()
-            print(
+            print_verbose(
                 f"First Parsing line {self.actual_line_no + 1}: '{self.current_line}'"
             )
             instruction_type = self.instruction_type()
@@ -51,7 +52,7 @@ class Parser:
         self.actual_line_no = -1
         while self.has_more_lines():
             self.advance()
-            print(
+            print_verbose(
                 f"Second parsing line {self.actual_line_no + 1}: '{self.current_line}'"
             )
             instruction_type = self.instruction_type()
@@ -61,6 +62,8 @@ class Parser:
                 )
             if instruction_type is InstructionType.A_INSTRUCTION:
                 self.parse_a()
+            if instruction_type is InstructionType.C_INSTRUCTION:
+                self.parse_c()
         return dict()
 
     def has_more_lines(self) -> bool:
@@ -70,10 +73,13 @@ class Parser:
         self.actual_line_no += 1
         self.current_line = re.sub("\\s+", "", self.contents[self.actual_line_no])
         if self.current_line.startswith("//"):
-            print("skipping comment line")
+            print_verbose("skipping comment line")
+            if self.has_more_lines():
+                # Move to next line if comments
+                self.advance()
             return
         elif self.instruction_type() is InstructionType.L_INSTRUCTION:
-            print("skipping label line")
+            print_verbose("skipping label line")
             return
         self.symbol_line_no += 1
 
@@ -96,10 +102,11 @@ class Parser:
             group_dict = match.groupdict()
 
         val = group_dict.get("symbol", "")
-        symbol_val = self.symbol_table.get(val)
-        if symbol_val is None:
-            raise ValueError(f"Missing symbol for val {val}")
-        return f"{symbol_val}"
+        if len(val) == 0:
+            raise ValueError(
+                f"Could not get symbol from instruction at line: {self.actual_line_no}"
+            )
+        return f"{val}"
 
     def dest(self) -> str:
         match = re.search(C_IN_RE, self.current_line)
@@ -117,17 +124,23 @@ class Parser:
 
     def jump(self) -> str:
         if self.current_line.find(";") >= 0 and self.current_line[-4:] != "null":
-            return code.jump(self.current_line[-3:])
+            return self.current_line[-3:]
         return ""
 
     def parse_a(self):
-        symbol_key = self.current_line.replace("@", "")
-        symbol_val = self.symbol_table[symbol_key]
-        if symbol_val is None:
+        symbol_key = self.symbol()
+        symbol_val = self.symbol_table.get(symbol_key)
+        symbol_key_is_decimal = re.match("\\d+", symbol_key) is not None
+        if symbol_val is None and not symbol_key_is_decimal:
+            print_verbose(
+                f"Adding to symbol table: {symbol_key}={self.current_stack_no}"
+            )
             self.symbol_table[symbol_key] = self.current_stack_no
             symbol_val = self.current_stack_no
             self.current_stack_no += 1
-        binary = code.print_binary(symbol_val, "016b")
+        binary = code.print_binary(
+            int(symbol_key) if symbol_key_is_decimal else symbol_val, "016b"
+        )
         self.parsed_contents.append(binary)
 
     def parse_c(self):
@@ -135,6 +148,6 @@ class Parser:
         self.parsed_contents.append(binary)
 
     def parse_l(self):
-        # TODO: Check to see if already exists? Could overwrite here
-        symbol_key = self.current_line.replace("(", "").replace(")", "")
+        symbol_key = self.symbol()
+        print_verbose(f"Adding to symbol table: {symbol_key}={self.symbol_line_no + 1}")
         self.symbol_table[symbol_key] = self.symbol_line_no + 1
