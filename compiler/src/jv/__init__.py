@@ -29,8 +29,8 @@ def translate(filename: io.TextIOWrapper | None, verbose: bool) -> None:
                 try:
                     with open(file, "r") as file:
                         files[file.name] = file.read()
-                except FileNotFoundError:
-                    print(f"The file {file} was not found.")
+                except Exception:
+                    print(f"The file {file} could not be opened.")
 
     if len(files) == 0:
         print("No Jack .vm files found in current directory")
