@@ -7,16 +7,26 @@ from .util import print_verbose, set_verbose
 from .parser import CommandType, Parser
 
 
+def init_pointer(f: io.TextIOWrapper, pointer_name: str, base_address_loc: int):
+    """Initializes pointer `pointer_name` to address location `base_address_loc`"""
+    f.write(f"  @{base_address_loc}\n")
+    f.write("  D=A\n")
+    f.write(f"  @{pointer_name}\n")
+    f.write("  M=D\n")
+
+
 def parse_file(parser: Parser):
     try:
         filename = parser.filename.replace(".vm", ".asm")
         with open(filename, "w") as f:
             code_writer = CodeWriter(f)
-            # Initialize SP to 256.  Likely only needed in CPU emulator
-            f.write("  @256\n")
-            f.write("  D=A\n")
-            f.write("  @SP\n")
-            f.write("  M=D\n")
+            # Initialize pointers to their normal locations.  Likely only needed in CPU emulator
+            init_pointer(f, "SP", 256)
+            init_pointer(f, "LCL", 356)
+            init_pointer(f, "ARG", 456)
+            init_pointer(f, "THIS", 556)
+            init_pointer(f, "THAT", 656)
+
             while parser.hasMoreLines():
                 parser.advance()
                 # If tokens = 0, in comment line
@@ -31,6 +41,7 @@ def parse_file(parser: Parser):
                     code_writer.write_push_pop(command, parser.arg1(), parser.arg2())
                 elif command_type == CommandType.C_POP:
                     code_writer.write_push_pop(command, parser.arg1(), parser.arg2())
+            f.writelines(["(END)\n", "@END\n", "0;JMP\n"])
 
     except Exception as e:
         print(f"Exception: {e}")
