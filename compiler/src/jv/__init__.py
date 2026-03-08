@@ -1,7 +1,39 @@
 import click
 import io
 import os
+
+from jv.codewriter import CodeWriter
 from .util import print_verbose, set_verbose
+from .parser import CommandType, Parser
+
+
+def parse_file(parser: Parser):
+    try:
+        filename = parser.filename.replace(".vm", ".asm")
+        with open(filename, "w") as f:
+            code_writer = CodeWriter(f)
+            # Initialize SP to 256.  Likely only needed in CPU emulator
+            f.write("  @256\n")
+            f.write("  D=A\n")
+            f.write("  @SP\n")
+            f.write("  M=D\n")
+            while parser.hasMoreLines():
+                parser.advance()
+                # If tokens = 0, in comment line
+                if len(parser.tokens) == 0:
+                    continue
+                command_type = parser.command_type()
+                command = parser.tokens[0]
+
+                if command_type == CommandType.C_ARITHMETIC:
+                    code_writer.write_arithmetic(parser.arg1())
+                elif command_type == CommandType.C_PUSH:
+                    code_writer.write_push_pop(command, parser.arg1(), parser.arg2())
+                elif command_type == CommandType.C_POP:
+                    code_writer.write_push_pop(command, parser.arg1(), parser.arg2())
+
+    except Exception as e:
+        print(f"Exception: {e}")
 
 
 def validate_ext(ctz, self, value: io.TextIOWrapper | None) -> io.TextIOWrapper | None:
@@ -39,5 +71,7 @@ def translate(filename: io.TextIOWrapper | None, verbose: bool) -> None:
     print_verbose(f"Files: {files}")
 
     for name, content in files.items():
-        print(f"{name} found.")
+        print_verbose(f"{name} found.")
+        parser = Parser(name, content)
+        parse_file(parser)
     return
