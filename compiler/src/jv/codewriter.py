@@ -7,11 +7,11 @@ class CodeWriter:
         self.eqi = 0
         self.gti = 0
         self.lti = 0
+        self.buffer: list[str] = list()
+        self.file_name_no_ext = self.file.name[:-4].upper()
 
     def write_arithmetic(self, command: str):
-        self.buffer: list[str] = list()
         self.buffer.append(f"// write_arithmetic {command}\n")
-        file_name_no_ext = self.file.name[:-4].upper()
 
         if command == "add":
             self._pop_d()
@@ -29,52 +29,48 @@ class CodeWriter:
             self.buffer.append("  M=M+1\n")
         elif command == "eq":
             self._pop_d()
-            # TODO: Can I optimize this without conditions?
             self.buffer.append("  A=M-1\n")
             self.buffer.append("  D=D-M\n")
-            self.buffer.append(f"  @{file_name_no_ext}_FALSE_EQ_{self.eqi}\n")
+            self.buffer.append(f"  @{self.file_name_no_ext}_FALSE_EQ_{self.eqi}\n")
             self.buffer.append("  D;JNE\n")
-            self.buffer.append(f"({file_name_no_ext}_TRUE_EQ_{self.eqi})\n")
             self.buffer.append("  D=1\n")
             self._push_d()
-            self.buffer.append(f"  @{file_name_no_ext}_DONE_EQ_{self.eqi}\n")
+            self.buffer.append(f"  @{self.file_name_no_ext}_DONE_EQ_{self.eqi}\n")
             self.buffer.append("  0;JMP\n")
-            self.buffer.append(f"({file_name_no_ext}_FALSE_EQ_{self.eqi})\n")
+            self.buffer.append(f"({self.file_name_no_ext}_FALSE_EQ_{self.eqi})\n")
             self.buffer.append("  D=0\n")
             self._push_d()
-            self.buffer.append(f"({file_name_no_ext}_DONE_EQ_{self.eqi})\n")
+            self.buffer.append(f"({self.file_name_no_ext}_DONE_EQ_{self.eqi})\n")
             self.eqi += 1
         elif command == "gt":
             self._pop_d()
             self.buffer.append("  A=M-1\n")
             self.buffer.append("  D=M-D\n")
-            self.buffer.append(f"  @{file_name_no_ext}_FALSE_GT_{self.gti}\n")
+            self.buffer.append(f"  @{self.file_name_no_ext}_FALSE_GT_{self.gti}\n")
             self.buffer.append("  D;JLE\n")
-            self.buffer.append(f"({file_name_no_ext}_TRUE_GT_{self.gti})\n")
             self.buffer.append("  D=1\n")
             self._push_d()
-            self.buffer.append(f"  @{file_name_no_ext}_DONE_GT_{self.gti}\n")
+            self.buffer.append(f"  @{self.file_name_no_ext}_DONE_GT_{self.gti}\n")
             self.buffer.append("  0;JMP\n")
-            self.buffer.append(f"({file_name_no_ext}_FALSE_GT_{self.gti})\n")
+            self.buffer.append(f"({self.file_name_no_ext}_FALSE_GT_{self.gti})\n")
             self.buffer.append("  D=0\n")
             self._push_d()
-            self.buffer.append(f"({file_name_no_ext}_DONE_GT_{self.gti})\n")
+            self.buffer.append(f"({self.file_name_no_ext}_DONE_GT_{self.gti})\n")
             self.gti += 1
         elif command == "lt":
             self._pop_d()
             self.buffer.append("  A=M-1\n")
             self.buffer.append("  D=M-D\n")
-            self.buffer.append(f"  @{file_name_no_ext}_FALSE_LT_{self.lti}\n")
+            self.buffer.append(f"  @{self.file_name_no_ext}_FALSE_LT_{self.lti}\n")
             self.buffer.append("  D;JGE\n")
-            self.buffer.append(f"({file_name_no_ext}_TRUE_LT_{self.lti})\n")
             self.buffer.append("  D=1\n")
             self._push_d()
-            self.buffer.append(f"  @{file_name_no_ext}_DONE_LT_{self.lti}\n")
+            self.buffer.append(f"  @{self.file_name_no_ext}_DONE_LT_{self.lti}\n")
             self.buffer.append("  0;JMP\n")
-            self.buffer.append(f"({file_name_no_ext}_FALSE_LT_{self.lti})\n")
+            self.buffer.append(f"({self.file_name_no_ext}_FALSE_LT_{self.lti})\n")
             self.buffer.append("  D=0\n")
             self._push_d()
-            self.buffer.append(f"({file_name_no_ext}_DONE_LT_{self.lti})\n")
+            self.buffer.append(f"({self.file_name_no_ext}_DONE_LT_{self.lti})\n")
             self.lti += 1
         elif command == "and":
             self._pop_d()
@@ -88,18 +84,109 @@ class CodeWriter:
             self._pop_d()
             self.buffer.append("  A=M\n")
             self.buffer.append("  M=!D\n")
-            self.buffer.append("  @SP\n")
-            self.buffer.append("  M=M+1\n")
-
-        self.file.writelines(self.buffer)
+            self._incSP()
 
     def write_push_pop(self, command: str, segment: str, index: int):
-        self.buffer = list()
         if command == "push":
             self._push(segment, index)
         elif command == "pop":
             self._pop(segment, index)
-        self.file.writelines(self.buffer)
+
+    def write_function(self, function_name: str, numVars: int):
+        self.buffer.append(f"// Function {function_name} {numVars}\n")
+
+        self.buffer.append(f"({self.file_name_no_ext}_{function_name})\n")
+        for i in range(numVars):
+            self.buffer.append(f"  @{i}\n")
+            self.buffer.append("  D=A\n")
+            self.buffer.append("  @LCL\n")
+            self.buffer.append("  A=D+M\n")
+            self.buffer.append("  M=0\n")
+
+    def write_call(self, function_name: str, numVars: int):
+        ret_i = 0
+        self.buffer.append(f"// Call {function_name} {numVars}\n")
+        self.buffer.append(f"({function_name}$ret.{ret_i})\n")
+        self.buffer.append("  D=A\n")
+        self._push_d()
+        self.buffer.append("  @LCL\n")
+        self.buffer.append("  D=A\n")
+        self._push_d()
+        self.buffer.append("  @ARG\n")
+        self.buffer.append("  D=A\n")
+        self._push_d()
+        self.buffer.append("  @THIS\n")
+        self.buffer.append("  D=A\n")
+        self._push_d()
+        self.buffer.append("  @THAT\n")
+        self.buffer.append("  D=A\n")
+        self._push_d()
+        self.buffer.append("  @SP\n")
+        self.buffer.append("  D=M\n")
+        self.buffer.append("  @5\n")
+        self.buffer.append("  D=D-A\n")
+        self.buffer.append(f"  @{numVars}\n")
+        self.buffer.append("  D=D-A\n")
+        self.buffer.append("  @ARG\n")
+        self.buffer.append("  M=D\n")
+        self.buffer.append("  @SP\n")
+        self.buffer.append("  D=M\n")
+        self.buffer.append("  @LCL\n")
+        self.buffer.append("  M=D\n")
+        self.buffer.append(f"  @{function_name}\n")
+        self.buffer.append("  0;JMP\n")
+        ret_i += 1
+
+    def write_return(self):
+        self.buffer.append("// Return\n")
+        self.buffer.append("  @LCL\n")
+        self.buffer.append("  D=M\n")
+        self.buffer.append("  @R13\n")
+        self.buffer.append("  M=D\n")  # frame(R13) = LCL
+        self.buffer.append("  @5\n")
+        self.buffer.append("  A=D-A\n")
+        self.buffer.append("  D=M\n")  # D=*(frame - 5)
+        self.buffer.append("  @R14\n")
+        self.buffer.append("  M=D\n")  # retAddr(R14) = *(frame - 5)
+        self._pop_d()
+        self.buffer.append("  @ARG\n")
+        self.buffer.append("  A=M\n")
+        self.buffer.append("  M=D\n")  # *ARG = pop()
+        self.buffer.append("  @ARG\n")
+        self.buffer.append("  D=M\n")
+        self.buffer.append("  @SP\n")
+        self.buffer.append("  M=D+1\n")  # SP = ARG + 1
+
+        self.buffer.append("  @R13\n")
+        self.buffer.append("  D=M\n")
+        self.buffer.append("  @1\n")
+        self.buffer.append("  D=D-A\n")
+        self.buffer.append("  @THAT\n")
+        self.buffer.append("  M=D\n")  # THAT = *(frame - 1)
+
+        self.buffer.append("  @R13\n")
+        self.buffer.append("  D=M\n")
+        self.buffer.append("  @2\n")
+        self.buffer.append("  D=D-A\n")
+        self.buffer.append("  @THIS\n")
+        self.buffer.append("  M=D\n")  # THIS = *(frame - 2)
+
+        self.buffer.append("  @R13\n")
+        self.buffer.append("  D=M\n")
+        self.buffer.append("  @3\n")
+        self.buffer.append("  D=D-A\n")
+        self.buffer.append("  @ARG\n")
+        self.buffer.append("  M=D\n")  # ARG = *(frame - 3)
+
+        self.buffer.append("  @R13\n")
+        self.buffer.append("  D=M\n")
+        self.buffer.append("  @4\n")
+        self.buffer.append("  D=D-A\n")
+        self.buffer.append("  @LCL\n")
+        self.buffer.append("  M=D\n")  # LCL = *(frame - 4)
+
+        self.buffer.append("  @R14\n")
+        self.buffer.append("  A=M\n")  # goto retAddr
 
     def _push_d(self):
         """Pushes D register onto stack.  A will be at @SP"""
@@ -129,7 +216,6 @@ class CodeWriter:
 
     def _pop(self, segment: str, index: int):
         self.buffer.append(f"// Pop {segment} {index}\n")
-        # self._pop_d()
 
         if segment == "local":
             self._store_d_index("LCL", index)
@@ -141,7 +227,7 @@ class CodeWriter:
             assert index >= 0 and index <= 7, "Index must be between 0-7"
             self._store_d_ram(f"R{5 + index}")
         elif segment == "static":
-            self._store_d_ram(f"{self.file.name[:-4].upper()}_{index}")
+            self._store_d_ram(f"{self.file_name_no_ext}_{index}")
 
     def _push(self, segment: str, index: int):
         self.buffer.append(f"// Push {segment} {index}\n")
@@ -159,8 +245,7 @@ class CodeWriter:
             assert index >= 0 and index <= 7, "Index must be between 0-7"
             self._load_ram_d(f"R{5 + index}")
         elif segment == "static":
-            # assert index >= 16 and index <= 255, "Index must be between 16-255"
-            self._load_ram_d(f"{self.file.name[:-4].upper()}_{index}")
+            self._load_ram_d(f"{self.file_name_no_ext}_{index}")
 
         self._push_d()
 
@@ -211,3 +296,4 @@ class CodeWriter:
         """Goes to RAM[address] and stores value into D Register"""
         self.buffer.append(f"  @{address}\n")
         self.buffer.append("  D=M\n")
+
