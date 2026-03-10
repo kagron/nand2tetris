@@ -1,0 +1,26 @@
+push constant 0
+pop argument 2 // sum
+push constant 0
+pop argument 3 // i
+push constant 4 
+pop local 0 // x
+push constant 3
+pop local 1 // y
+
+label WHILE_LOOP
+  push argument 3
+  push local 1
+  lt
+  not
+  if-goto WHILE_END
+  push argument 2
+  push local 0
+  add
+  pop argument 2
+  push argument 3
+  push constant 1
+  add
+  pop argument 3
+  goto WHILE_LOOP
+label WHILE_END
+  push argument 2

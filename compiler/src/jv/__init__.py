@@ -34,6 +34,7 @@ def parse_file(parser: Parser):
                 if len(parser.tokens) == 0:
                     continue
                 command_type = parser.command_type()
+                print_verbose(f"command_type: {command_type}")
                 command = parser.tokens[0]
 
                 if command_type == CommandType.C_ARITHMETIC:
@@ -42,8 +43,16 @@ def parse_file(parser: Parser):
                     code_writer.write_push_pop(command, parser.arg1(), parser.arg2())
                 elif command_type == CommandType.C_POP:
                     code_writer.write_push_pop(command, parser.arg1(), parser.arg2())
+                elif command_type == CommandType.C_LABEL:
+                    code_writer.write_label(parser.arg1())
+                elif command_type == CommandType.C_IF:
+                    code_writer.write_if(parser.arg1())
+                elif command_type == CommandType.C_GOTO:
+                    code_writer.write_goto(parser.arg1())
                 elif command_type == CommandType.C_FUNCTION:
                     code_writer.write_function(parser.arg1(), parser.arg2())
+                elif command_type == CommandType.C_CALL:
+                    code_writer.write_call(parser.arg1(), parser.arg2())
                 f.writelines(code_writer.buffer)
                 code_writer.buffer.clear()
             f.writelines(["(END)\n", "@END\n", "0;JMP\n"])

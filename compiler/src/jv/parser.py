@@ -55,6 +55,7 @@ class Parser:
                 return CommandType.C_RETURN
             elif token.find("call") > -1:
                 return CommandType.C_CALL
+            # Order matters here since if will succeed first before goto
             elif token.find("if") > -1:
                 return CommandType.C_IF
             elif token.find("goto") > -1:

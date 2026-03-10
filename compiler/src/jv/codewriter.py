@@ -33,7 +33,7 @@ class CodeWriter:
             self.buffer.append("  D=D-M\n")
             self.buffer.append(f"  @{self.file_name_no_ext}_FALSE_EQ_{self.eqi}\n")
             self.buffer.append("  D;JNE\n")
-            self.buffer.append("  D=1\n")
+            self.buffer.append("  D=-1\n")
             self._push_d()
             self.buffer.append(f"  @{self.file_name_no_ext}_DONE_EQ_{self.eqi}\n")
             self.buffer.append("  0;JMP\n")
@@ -48,7 +48,7 @@ class CodeWriter:
             self.buffer.append("  D=M-D\n")
             self.buffer.append(f"  @{self.file_name_no_ext}_FALSE_GT_{self.gti}\n")
             self.buffer.append("  D;JLE\n")
-            self.buffer.append("  D=1\n")
+            self.buffer.append("  D=-1\n")
             self._push_d()
             self.buffer.append(f"  @{self.file_name_no_ext}_DONE_GT_{self.gti}\n")
             self.buffer.append("  0;JMP\n")
@@ -63,7 +63,7 @@ class CodeWriter:
             self.buffer.append("  D=M-D\n")
             self.buffer.append(f"  @{self.file_name_no_ext}_FALSE_LT_{self.lti}\n")
             self.buffer.append("  D;JGE\n")
-            self.buffer.append("  D=1\n")
+            self.buffer.append("  D=-1\n")
             self._push_d()
             self.buffer.append(f"  @{self.file_name_no_ext}_DONE_LT_{self.lti}\n")
             self.buffer.append("  0;JMP\n")
@@ -91,6 +91,21 @@ class CodeWriter:
             self._push(segment, index)
         elif command == "pop":
             self._pop(segment, index)
+
+    def write_label(self, label: str):
+        self.buffer.append(f"// Label {label}\n")
+        self.buffer.append(f"({self.file_name_no_ext}_{label})\n")
+
+    def write_if(self, label: str):
+        self.buffer.append(f"// If-goto {label}\n")
+        self._pop_d()
+        self.buffer.append(f"  @{self.file_name_no_ext}_{label}\n")
+        self.buffer.append("  D;JNE\n")
+
+    def write_goto(self, label: str):
+        self.buffer.append(f"// Goto {label}\n")
+        self.buffer.append(f"  @{self.file_name_no_ext}_{label}\n")
+        self.buffer.append("  0;JMP\n")
 
     def write_function(self, function_name: str, numVars: int):
         self.buffer.append(f"// Function {function_name} {numVars}\n")
@@ -296,4 +311,3 @@ class CodeWriter:
         """Goes to RAM[address] and stores value into D Register"""
         self.buffer.append(f"  @{address}\n")
         self.buffer.append("  D=M\n")
-
