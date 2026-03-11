@@ -21,12 +21,7 @@ def parse_file(parser: Parser):
         with open(filename, "w") as f:
             code_writer = CodeWriter(f)
 
-            # Initialize pointers to their normal locations.  Likely only needed in CPU emulator
             init_pointer(f, "SP", 256)
-            init_pointer(f, "LCL", 356)
-            init_pointer(f, "ARG", 456)
-            init_pointer(f, "THIS", 556)
-            init_pointer(f, "THAT", 656)
 
             while parser.hasMoreLines():
                 parser.advance()
@@ -53,9 +48,10 @@ def parse_file(parser: Parser):
                     code_writer.write_function(parser.arg1(), parser.arg2())
                 elif command_type == CommandType.C_CALL:
                     code_writer.write_call(parser.arg1(), parser.arg2())
+                elif command_type == CommandType.C_RETURN:
+                    code_writer.write_return()
                 f.writelines(code_writer.buffer)
                 code_writer.buffer.clear()
-            f.writelines(["(END)\n", "@END\n", "0;JMP\n"])
 
     except Exception as e:
         print(f"Exception: {e}")

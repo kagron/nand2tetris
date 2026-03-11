@@ -1,26 +1,33 @@
-push constant 0
-pop argument 2 // sum
-push constant 0
-pop argument 3 // i
-push constant 4 
-pop local 0 // x
-push constant 3
-pop local 1 // y
+goto Sys.init
 
+function Mult 2
+  push constant 0
+  pop local 0 // sum
+  push constant 0
+  pop local 1 // i
 label WHILE_LOOP
-  push argument 3
   push local 1
+  push argument 1
   lt
   not
   if-goto WHILE_END
-  push argument 2
+  push argument 0
   push local 0
   add
-  pop argument 2
-  push argument 3
+  pop local 0
+  push local 1
   push constant 1
   add
-  pop argument 3
+  pop local 1
   goto WHILE_LOOP
 label WHILE_END
-  push argument 2
+  push local 0
+  return
+
+
+function Sys.init 0
+  push constant 4
+  push constant 4
+  call Mult 2
+label END
+goto END
