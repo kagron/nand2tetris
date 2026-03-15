@@ -37,6 +37,7 @@ class Parser:
         print_verbose(f"tokens: {self.tokens}")
 
     def command_type(self) -> CommandType:
+        """Returns `CommandType` of current line"""
         assert self.tokens is not None, "Must not call this in comment line"
         for token in self.tokens:
             if ["add", "sub", "neg", "eq", "gt", "lt", "and", "or", "not"].__contains__(
@@ -64,10 +65,12 @@ class Parser:
         return CommandType.C_INVALID
 
     def arg1(self) -> str:
+        """Returns first argument of current line"""
         assert self.tokens is not None, "Must not call this in comment line"
         return self.tokens[1:2][0] if len(self.tokens) > 1 else self.tokens[0]
 
     def arg2(self) -> int:
+        """Returns second argument of current line"""
         assert self.tokens is not None, "Must not call this in comment line"
         assert len(self.tokens) > 2, (
             "arg2 should only be called when using pop, push, function, or call"

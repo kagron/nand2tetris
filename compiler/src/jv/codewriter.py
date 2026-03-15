@@ -11,239 +11,270 @@ class CodeWriter:
         self.file_name_no_ext = self.file.name[:-4].upper()
 
     def write_arithmetic(self, command: str):
-        self.buffer.append(f"// write_arithmetic {command}\n")
+        """
+        Writes assembly instructions for arithmetic instructions `add`, `sub`
+        `neg`, `eq`, `gt`, `lt`, `and`, `or`, and `not`
+        """
+        self._write_line(f"// write_arithmetic {command}")
 
         if command == "add":
             self._pop_d()
-            self.buffer.append("  A=M-1\n")
-            self.buffer.append("  M=D+M\n")
+            self._write_line("  A=M-1")
+            self._write_line("  M=D+M")
         elif command == "sub":
             self._pop_d()
-            self.buffer.append("  A=M-1\n")
-            self.buffer.append("  M=M-D\n")
+            self._write_line("  A=M-1")
+            self._write_line("  M=M-D")
         elif command == "neg":
             self._pop_d()
-            self.buffer.append("  A=M\n")
-            self.buffer.append("  M=-D\n")
-            self.buffer.append("  @SP\n")
-            self.buffer.append("  M=M+1\n")
+            self._write_line("  A=M")
+            self._write_line("  M=-D")
+            self._write_line("  @SP")
+            self._write_line("  M=M+1")
         elif command == "eq":
             self._pop_d()
-            self.buffer.append("  A=M-1\n")
-            self.buffer.append("  D=D-M\n")
-            self.buffer.append(f"  @{self.file_name_no_ext}_ELSE_EQ_{self.eqi}\n")
-            self.buffer.append("  D;JNE\n")
-            self.buffer.append("  D=-1\n")
+            self._write_line("  A=M-1")
+            self._write_line("  D=D-M")
+            self._write_line(f"  @{self.file_name_no_ext}_ELSE_EQ_{self.eqi}")
+            self._write_line("  D;JNE")
+            self._write_line("  D=-1")
             self._push_d()
-            self.buffer.append(f"  @{self.file_name_no_ext}_DONE_EQ_{self.eqi}\n")
-            self.buffer.append("  0;JMP\n")
-            self.buffer.append(f"({self.file_name_no_ext}_ELSE_EQ_{self.eqi})\n")
-            self.buffer.append("  D=0\n")
+            self._write_line(f"  @{self.file_name_no_ext}_DONE_EQ_{self.eqi}")
+            self._write_line("  0;JMP")
+            self._write_line(f"({self.file_name_no_ext}_ELSE_EQ_{self.eqi})")
+            self._write_line("  D=0")
             self._push_d()
-            self.buffer.append(f"({self.file_name_no_ext}_DONE_EQ_{self.eqi})\n")
+            self._write_line(f"({self.file_name_no_ext}_DONE_EQ_{self.eqi})")
             self.eqi += 1
         elif command == "gt":
             self._pop_d()
-            self.buffer.append("  A=M-1\n")
-            self.buffer.append("  D=M-D\n")
-            self.buffer.append(f"  @{self.file_name_no_ext}_ELSE_GT_{self.gti}\n")
-            self.buffer.append("  D;JLE\n")
-            self.buffer.append("  D=-1\n")
+            self._write_line("  A=M-1")
+            self._write_line("  D=M-D")
+            self._write_line(f"  @{self.file_name_no_ext}_ELSE_GT_{self.gti}")
+            self._write_line("  D;JLE")
+            self._write_line("  D=-1")
             self._push_d()
-            self.buffer.append(f"  @{self.file_name_no_ext}_DONE_GT_{self.gti}\n")
-            self.buffer.append("  0;JMP\n")
-            self.buffer.append(f"({self.file_name_no_ext}_ELSE_GT_{self.gti})\n")
-            self.buffer.append("  D=0\n")
+            self._write_line(f"  @{self.file_name_no_ext}_DONE_GT_{self.gti}")
+            self._write_line("  0;JMP")
+            self._write_line(f"({self.file_name_no_ext}_ELSE_GT_{self.gti})")
+            self._write_line("  D=0")
             self._push_d()
-            self.buffer.append(f"({self.file_name_no_ext}_DONE_GT_{self.gti})\n")
+            self._write_line(f"({self.file_name_no_ext}_DONE_GT_{self.gti})")
             self.gti += 1
         elif command == "lt":
             self._pop_d()
-            self.buffer.append("  A=M-1\n")
-            self.buffer.append("  D=M-D\n")
-            self.buffer.append(f"  @{self.file_name_no_ext}_ELSE_LT_{self.lti}\n")
-            self.buffer.append("  D;JGE\n")
-            self.buffer.append("  D=-1\n")
+            self._write_line("  A=M-1")
+            self._write_line("  D=M-D")
+            self._write_line(f"  @{self.file_name_no_ext}_ELSE_LT_{self.lti}")
+            self._write_line("  D;JGE")
+            self._write_line("  D=-1")
             self._push_d()
-            self.buffer.append(f"  @{self.file_name_no_ext}_DONE_LT_{self.lti}\n")
-            self.buffer.append("  0;JMP\n")
-            self.buffer.append(f"({self.file_name_no_ext}_ELSE_LT_{self.lti})\n")
-            self.buffer.append("  D=0\n")
+            self._write_line(f"  @{self.file_name_no_ext}_DONE_LT_{self.lti}")
+            self._write_line("  0;JMP")
+            self._write_line(f"({self.file_name_no_ext}_ELSE_LT_{self.lti})")
+            self._write_line("  D=0")
             self._push_d()
-            self.buffer.append(f"({self.file_name_no_ext}_DONE_LT_{self.lti})\n")
+            self._write_line(f"({self.file_name_no_ext}_DONE_LT_{self.lti})")
             self.lti += 1
         elif command == "and":
             self._pop_d()
-            self.buffer.append("  A=M-1\n")
-            self.buffer.append("  M=D&M\n")
+            self._write_line("  A=M-1")
+            self._write_line("  M=D&M")
         elif command == "or":
             self._pop_d()
-            self.buffer.append("  A=M-1\n")
-            self.buffer.append("  M=D|M\n")
+            self._write_line("  A=M-1")
+            self._write_line("  M=D|M")
         elif command == "not":
             self._pop_d()
-            self.buffer.append("  A=M\n")
-            self.buffer.append("  M=!D\n")
+            self._write_line("  A=M")
+            self._write_line("  M=!D")
             self._incSP()
 
     def write_push_pop(self, command: str, segment: str, index: int):
+        """Writes assembly instructions for `push` and `pop` instructions"""
         if command == "push":
             self._push(segment, index)
         elif command == "pop":
             self._pop(segment, index)
 
     def write_label(self, label: str):
-        self.buffer.append(f"// Label {label}\n")
-        self.buffer.append(f"({self.file_name_no_ext}_{label})\n")
+        """Writes assembly instructions for `label`.  Injects label `label`."""
+        self._write_line(f"// Label {label}")
+        self._write_line(f"({self.file_name_no_ext}.{label})")
 
     def write_if(self, label: str):
-        self.buffer.append(f"// If-goto {label}\n")
+        """
+        Writes assembly instructions for `if-goto`.  Pops stack to D, jumps to
+        `label` if `D` register is not equal to `0`
+        """
+
+        self._write_line(f"// If-goto {label}")
         self._pop_d()
-        self.buffer.append(f"// Checking if-goto {label}\n")
-        self.buffer.append(f"  @{self.file_name_no_ext}_{label}\n")
-        self.buffer.append("  D;JNE\n")
+        self._write_line(f"// Checking if-goto {label}")
+        self._write_line(f"  @{self.file_name_no_ext}.{label}")
+        self._write_line("  D;JNE")
 
     def write_goto(self, label: str):
-        self.buffer.append(f"// Goto {label}\n")
-        self.buffer.append(f"  @{self.file_name_no_ext}_{label}\n")
-        self.buffer.append("  0;JMP\n")
+        """Writes assembly instructions for `goto`.  Jumps to `label`."""
+        self._write_line(f"// Goto {label}")
+        self._write_line(f"  @{self.file_name_no_ext}.{label}")
+        self._write_line("  0;JMP")
 
     def write_function(self, function_name: str, numVars: int):
-        self.buffer.append(f"// Function {function_name} {numVars}\n")
+        """
+        Writes assembly instructions for `function`.  Injects function entry
+        label, then pushes `0` to stack for `numVars` times
+        """
+        self._write_line(f"// Function {function_name} {numVars}")
 
-        self.buffer.append(f"({self.file_name_no_ext}_{function_name})\n")
+        self._write_line(f"({self.file_name_no_ext}.{function_name})")
         for i in range(numVars):
-            self.buffer.append(f"// Allocating local {i} for {function_name}\n")
-            self.buffer.append("  @0\n")
-            self.buffer.append("  D=A\n")
+            self._write_line(f"// Allocating local {i} for {function_name}")
+            self._write_line("  @0")
+            self._write_line("  D=A")
             self._push_d()
 
-    def write_call(self, function_name: str, numVars: int):
+    def write_call(self, function_name: str, numArgs: int):
+        """
+        Writes assembly instructions for `call` function.  Pushes return address,
+        `LCL`, `ARG`, `THIS`, and `THAT` to the stack.  Repositions `ARG` to
+        `SP` - `5` - `numArgs` Repositions LCL to SP.  Adds return address label
+        at the end
+        """
         ret_i = 0
-        self.buffer.append(f"// Call {function_name} {numVars}\n")
-        self.buffer.append(f"  @{function_name}$ret.{ret_i}\n")
-        self.buffer.append("  D=A\n")
-        self.buffer.append("// Pushing return address to stack\n")
+        fun_label = f"{self.file_name_no_ext}.{function_name}"
+        ret_label = f"{fun_label}$ret.{ret_i}"
+        self._write_line(f"// Call {function_name} {numArgs}")
+        self._write_line(f"  @{ret_label}")
+        self._write_line("  D=A")
+        self._write_line("// Pushing return address to stack")
         self._push_d()
-        self.buffer.append("  @LCL\n")
-        self.buffer.append("  D=M\n")
-        self.buffer.append("// Pushing LCL to stack\n")
+        self._write_line("  @LCL")
+        self._write_line("  D=M")
+        self._write_line("// Pushing LCL to stack")
         self._push_d()
-        self.buffer.append("  @ARG\n")
-        self.buffer.append("  D=M\n")
-        self.buffer.append("// Pushing ARG to stack\n")
+        self._write_line("  @ARG")
+        self._write_line("  D=M")
+        self._write_line("// Pushing ARG to stack")
         self._push_d()
-        self.buffer.append("  @THIS\n")
-        self.buffer.append("  D=M\n")
-        self.buffer.append("// Pushing THIS to stack\n")
+        self._write_line("  @THIS")
+        self._write_line("  D=M")
+        self._write_line("// Pushing THIS to stack")
         self._push_d()
-        self.buffer.append("  @THAT\n")
-        self.buffer.append("  D=M\n")
-        self.buffer.append("// Pushing THAT to stack\n")
+        self._write_line("  @THAT")
+        self._write_line("  D=M")
+        self._write_line("// Pushing THAT to stack")
         self._push_d()
-        self.buffer.append("  @SP\n")
-        self.buffer.append("  D=M\n")
-        self.buffer.append("  @5\n")
-        self.buffer.append("  D=D-A\n")
-        self.buffer.append(f"  @{numVars}\n")
-        self.buffer.append("  D=D-A\n")
-        self.buffer.append("  @ARG\n")
-        self.buffer.append("// Setting ARG to SP-5-numVars\n")
-        self.buffer.append("  M=D\n")
-        self.buffer.append("  @SP\n")
-        self.buffer.append("  D=M\n")
-        self.buffer.append("  @LCL\n")
-        self.buffer.append("  M=D\n")
-        self.buffer.append(f"  @{self.file_name_no_ext}_{function_name}\n")
-        self.buffer.append("  0;JMP\n")
-        self.buffer.append(f"({function_name}$ret.{ret_i})\n")
+        self._write_line("  @SP")
+        self._write_line("  D=M")
+        self._write_line("  @5")
+        self._write_line("  D=D-A")
+        self._write_line(f"  @{numArgs}")
+        self._write_line("  D=D-A")
+        self._write_line("  @ARG")
+        self._write_line("// Setting ARG to SP-5-numArgs")
+        self._write_line("  M=D")
+        self._write_line("  @SP")
+        self._write_line("  D=M")
+        self._write_line("  @LCL")
+        self._write_line("  M=D")
+        self._write_line(f"  @{fun_label}")
+        self._write_line("  0;JMP")
+        self._write_line(f"({ret_label})")
         ret_i += 1
 
     def write_return(self):
-        self.buffer.append("// Return\n")
-        self.buffer.append("  @LCL\n")
-        self.buffer.append("  D=M\n")
-        self.buffer.append("  @R13\n")
-        self.buffer.append("  M=D\n")  # Beginning of our frame(R13) = LCL
-        self.buffer.append("  @5\n")
-        self.buffer.append("  A=D-A\n")
-        self.buffer.append("  D=M\n")  # D=*(frame - 5)
-        self.buffer.append("  @R14\n")
-        self.buffer.append("// Storing returnAddr as LCL-5 into R14\n")
-        self.buffer.append("  M=D\n")  # retAddr(R14) = *(frame - 5)
+        """
+        Writes assembly instructions for `return`.  Stores LCL - 5 into RAM[14]
+        as the return address.  Pops stack and stores it at current ARG.
+        Repositions SP to ARG + 1. Restores THAT, THIS, ARG, and LCL.  Goes
+        to return address
+        """
+        self._write_line("// Return")
+        self._write_line("  @LCL")
+        self._write_line("  D=M")
+        self._write_line("  @R13")
+        self._write_line("  M=D")  # Beginning of our frame(R13) = LCL
+        self._write_line("  @5")
+        self._write_line("  A=D-A")
+        self._write_line("  D=M")  # D=*(frame - 5)
+        self._write_line("  @R14")
+        self._write_line("// Storing returnAddr as LCL-5 into R14")
+        self._write_line("  M=D")  # retAddr(R14) = *(frame - 5)
         self._pop_d()
-        self.buffer.append("  @ARG\n")
-        self.buffer.append("  A=M\n")
-        self.buffer.append("// Popping D into ARG dereferenced value\n")
-        self.buffer.append("  M=D\n")  # *ARG = pop()
-        self.buffer.append("  @ARG\n")
-        self.buffer.append("  D=M\n")
-        self.buffer.append("  @SP\n")
-        self.buffer.append("// SP = Arg + 1\n")
-        self.buffer.append("  M=D+1\n")  # SP = ARG + 1
+        self._write_line("  @ARG")
+        self._write_line("  A=M")
+        self._write_line("// Popping D into ARG dereferenced value")
+        self._write_line("  M=D")  # *ARG = pop()
+        self._write_line("  @ARG")
+        self._write_line("  D=M")
+        self._write_line("  @SP")
+        self._write_line("// SP = Arg + 1")
+        self._write_line("  M=D+1")  # SP = ARG + 1
 
-        self.buffer.append("  @R13\n")
-        self.buffer.append("  D=M\n")
-        self.buffer.append("  @1\n")
-        self.buffer.append("  D=D-A\n")
-        self.buffer.append("  @THAT\n")
-        self.buffer.append("  M=D\n")  # THAT = *(frame - 1)
+        self._write_line("  @R13")
+        self._write_line("  D=M")
+        self._write_line("  @1")
+        self._write_line("  D=D-A")
+        self._write_line("  @THAT")
+        self._write_line("  M=D")  # THAT = *(frame - 1)
 
-        self.buffer.append("  @R13\n")
-        self.buffer.append("  D=M\n")
-        self.buffer.append("  @2\n")
-        self.buffer.append("  D=D-A\n")
-        self.buffer.append("  @THIS\n")
-        self.buffer.append("  M=D\n")  # THIS = *(frame - 2)
+        self._write_line("  @R13")
+        self._write_line("  D=M")
+        self._write_line("  @2")
+        self._write_line("  D=D-A")
+        self._write_line("  @THIS")
+        self._write_line("  M=D")  # THIS = *(frame - 2)
 
-        self.buffer.append("  @R13\n")
-        self.buffer.append("  D=M\n")
-        self.buffer.append("  @3\n")
-        self.buffer.append("  D=D-A\n")
-        self.buffer.append("  @ARG\n")
-        self.buffer.append("  M=D\n")  # ARG = *(frame - 3)
+        self._write_line("  @R13")
+        self._write_line("  D=M")
+        self._write_line("  @3")
+        self._write_line("  D=D-A")
+        self._write_line("  @ARG")
+        self._write_line("  M=D")  # ARG = *(frame - 3)
 
-        self.buffer.append("  @R13\n")
-        self.buffer.append("  D=M\n")
-        self.buffer.append("  @4\n")
-        self.buffer.append("  D=D-A\n")
-        self.buffer.append("  @LCL\n")
-        self.buffer.append("  M=D\n")  # LCL = *(frame - 4)
+        self._write_line("  @R13")
+        self._write_line("  D=M")
+        self._write_line("  @4")
+        self._write_line("  D=D-A")
+        self._write_line("  @LCL")
+        self._write_line("  M=D")  # LCL = *(frame - 4)
 
-        self.buffer.append("  @R14\n")
-        self.buffer.append("  A=M\n")
-        self.buffer.append("  0;JMP\n")  # goto retAddr
+        self._write_line("  @R14")
+        self._write_line("  A=M")
+        self._write_line("  0;JMP")  # goto retAddr
 
     def _push_d(self):
         """Pushes D register onto stack.  A will be at @SP"""
-        self.buffer.append("// Push D\n")
-        self.buffer.append("  @SP\n")
-        self.buffer.append("  A=M\n")
-        self.buffer.append("  M=D\n")
+        self._write_line("// Push D")
+        self._write_line("  @SP")
+        self._write_line("  A=M")
+        self._write_line("  M=D")
         self._incSP()
 
     def _pop_d(self):
         """Pops stack into D register.  A will be at @SP"""
-        self.buffer.append("// Pop D\n")
-        self.buffer.append("  @SP\n")
-        self.buffer.append("  A=M-1\n")
-        self.buffer.append("  D=M\n")
+        self._write_line("// Pop D")
+        self._write_line("  @SP")
+        self._write_line("  A=M-1")
+        self._write_line("  D=M")
         self._decSP()
 
     def _incSP(self):
         """Incremenets stack pointer.  A will be at @SP"""
-        self.buffer.append("// Incrementing SP\n")
-        self.buffer.append("  @SP\n")
-        self.buffer.append("  M=M+1\n")
+        self._write_line("// Incrementing SP")
+        self._write_line("  @SP")
+        self._write_line("  M=M+1")
 
     def _decSP(self):
         """Decrements stack pointer.  A will be at @SP"""
-        self.buffer.append("// Decrementing SP\n")
-        self.buffer.append("  @SP\n")
-        self.buffer.append("  M=M-1\n")
+        self._write_line("// Decrementing SP")
+        self._write_line("  @SP")
+        self._write_line("  M=M-1")
 
     def _pop(self, segment: str, index: int):
-        self.buffer.append(f"// Pop {segment} {index}\n")
+        """Handles `pop` instructions"""
+        self._write_line(f"// Pop {segment} {index}")
 
         if segment == "local":
             if index == 0:
@@ -255,6 +286,16 @@ class CodeWriter:
                 self._store_d_segment("ARG")
             else:
                 self._store_d_index("ARG", index)
+        elif segment == "this":
+            if index == 0:
+                self._store_d_segment("THIS")
+            else:
+                self._store_d_index("THIS", index)
+        elif segment == "that":
+            if index == 0:
+                self._store_d_segment("THAT")
+            else:
+                self._store_d_index("THAT", index)
         elif segment == "pointer":
             self._store_d_segment("THIS" if index == 0 else "THAT")
         elif segment == "temp":
@@ -264,7 +305,8 @@ class CodeWriter:
             self._store_d_ram(f"{self.file_name_no_ext}_{index}")
 
     def _push(self, segment: str, index: int):
-        self.buffer.append(f"// Push {segment} {index}\n")
+        """Handles `push` instructions"""
+        self._write_line(f"// Push {segment} {index}")
         if segment == "local":
             if index == 0:
                 self._load_segment_d("LCL")
@@ -275,12 +317,22 @@ class CodeWriter:
                 self._load_segment_d("ARG")
             else:
                 self._load_index_d("ARG", index)
+        elif segment == "this":
+            if index == 0:
+                self._load_segment_d("THIS")
+            else:
+                self._load_index_d("THIS", index)
+        elif segment == "that":
+            if index == 0:
+                self._load_segment_d("THAT")
+            else:
+                self._load_index_d("THAT", index)
         elif segment == "pointer":
             self._load_segment_d("THIS" if index == 0 else "THAT")
         elif segment == "constant":
             assert index >= 0 and index < 2**15, "Index must be between 0-32767"
-            self.buffer.append(f"  @{index}\n")
-            self.buffer.append("  D=A\n")
+            self._write_line(f"  @{index}")
+            self._write_line("  D=A")
         elif segment == "temp":
             assert index >= 0 and index <= 7, "Index must be between 0-7"
             self._load_ram_d(f"R{5 + index}")
@@ -292,56 +344,59 @@ class CodeWriter:
     def _store_d_index(self, segment: str, index: int):
         """Stores D register at base segment + index"""
         # TODO: Can I optimize this without using R13 for storing segment + index?
-        self.buffer.append(f"// Storing D at segment '{segment}' index '{index}'\n")
-        self.buffer.append(f"  @{index}\n")
-        self.buffer.append("  D=A\n")
-        self.buffer.append(f"  @{segment}\n")
-        self.buffer.append("  D=D+M\n")
-        self.buffer.append("  @R13\n")
-        self.buffer.append("  M=D\n")
+        self._write_line(f"// Storing D at segment '{segment}' index '{index}'")
+        self._write_line(f"  @{index}")
+        self._write_line("  D=A")
+        self._write_line(f"  @{segment}")
+        self._write_line("  D=D+M")
+        self._write_line("  @R13")
+        self._write_line("  M=D")
 
         self._pop_d()
 
-        self.buffer.append(
-            f"// Popping D into calculated segment '{segment}' index '{index}'\n"
+        self._write_line(
+            f"// Popping D into calculated segment '{segment}' index '{index}'"
         )
-        self.buffer.append("  @R13\n")
-        self.buffer.append("  A=M\n")
-        self.buffer.append("  M=D\n")
+        self._write_line("  @R13")
+        self._write_line("  A=M")
+        self._write_line("  M=D")
 
     def _store_d_segment(self, segment: str):
         """Stores D register at base segment"""
-        self.buffer.append(f"// Storing D at segment '{segment}'\n")
+        self._write_line(f"// Storing D at segment '{segment}'")
         self._pop_d()
-        self.buffer.append(f"  @{segment}\n")
-        self.buffer.append("  A=M\n")
-        self.buffer.append("  M=D\n")
+        self._write_line(f"  @{segment}")
+        self._write_line("  A=M")
+        self._write_line("  M=D")
 
     def _store_d_ram(self, address: str):
         """Goes to RAM[address] and stores D Register there"""
-        self.buffer.append(f"// Storing D at RAM['{address}']\n")
+        self._write_line(f"// Storing D at RAM['{address}']")
         self._pop_d()
-        self.buffer.append(f"  @{address}\n")
-        self.buffer.append("  M=D\n")
+        self._write_line(f"  @{address}")
+        self._write_line("  M=D")
 
     def _load_index_d(self, segment: str, index: int):
         """Goes to base segment + index and stores value into D Register"""
-        self.buffer.append(f"// Loading D from segment '{segment}' index '{index}'\n")
-        self.buffer.append(f"  @{index}\n")
-        self.buffer.append("  D=A\n")
-        self.buffer.append(f"  @{segment}\n")
-        self.buffer.append("  A=D+M\n")
-        self.buffer.append("  D=M\n")
+        self._write_line(f"// Loading D from segment '{segment}' index '{index}'")
+        self._write_line(f"  @{index}")
+        self._write_line("  D=A")
+        self._write_line(f"  @{segment}")
+        self._write_line("  A=D+M")
+        self._write_line("  D=M")
 
     def _load_segment_d(self, segment: str):
         """Goes to base segment and stores value into D Register"""
-        self.buffer.append(f"// Loading D from segment '{segment}'\n")
-        self.buffer.append(f"  @{segment}\n")
-        self.buffer.append("  A=M\n")
-        self.buffer.append("  D=M\n")
+        self._write_line(f"// Loading D from segment '{segment}'")
+        self._write_line(f"  @{segment}")
+        self._write_line("  A=M")
+        self._write_line("  D=M")
 
     def _load_ram_d(self, address: str):
         """Goes to RAM[address] and stores value into D Register"""
-        self.buffer.append(f"// Loading D from RAM['{address}']\n")
-        self.buffer.append(f"  @{address}\n")
-        self.buffer.append("  D=M\n")
+        self._write_line(f"// Loading D from RAM['{address}']")
+        self._write_line(f"  @{address}")
+        self._write_line("  D=M")
+
+    def _write_line(self, line: str):
+        self.buffer.append(f"{line}\n")
