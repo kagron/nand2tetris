@@ -1,7 +1,7 @@
 VERBOSE = False
 
 
-def write_verbose(buffer: list[str], line: str):
+def append_verbose(buffer: list[str], line: str):
     if VERBOSE and len(line) > 0:
         buffer.append(f"{line}\n")
 
