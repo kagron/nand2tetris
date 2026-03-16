@@ -15,46 +15,53 @@ def init_pointer(f: io.TextIOWrapper, pointer_name: str, base_address_loc: int):
     f.write("M=D\n")
 
 
-def parse_file(parser: Parser):
-    try:
-        filename = parser.filename.replace(".vm", ".asm")
-        with open(filename, "w") as f:
-            code_writer = CodeWriter(f)
+def init_program(f: io.TextIOWrapper):
+    """Initializes program by calling Sys.init at beginning of program"""
+    # TODO: Probably a better way to do this but its too late in the process
+    cw = CodeWriter("")
+    cw.write_call("Sys.init", 0)
+    f.writelines(cw.buffer)
 
-            init_pointer(f, "SP", 256)
 
-            while parser.hasMoreLines():
-                parser.advance()
-                # If tokens = 0, in comment line
-                if len(parser.tokens) == 0:
-                    continue
-                command_type = parser.command_type()
-                print_verbose(f"command_type: {command_type}")
-                command = parser.tokens[0]
+def parse_file(parser: Parser, filename: str, f: io.TextIOWrapper):
+    code_writer = CodeWriter(filename)
+    current_fun = ""
 
-                if command_type == CommandType.C_ARITHMETIC:
-                    code_writer.write_arithmetic(parser.arg1())
-                elif command_type == CommandType.C_PUSH:
-                    code_writer.write_push_pop(command, parser.arg1(), parser.arg2())
-                elif command_type == CommandType.C_POP:
-                    code_writer.write_push_pop(command, parser.arg1(), parser.arg2())
-                elif command_type == CommandType.C_LABEL:
-                    code_writer.write_label(parser.arg1())
-                elif command_type == CommandType.C_IF:
-                    code_writer.write_if(parser.arg1())
-                elif command_type == CommandType.C_GOTO:
-                    code_writer.write_goto(parser.arg1())
-                elif command_type == CommandType.C_FUNCTION:
-                    code_writer.write_function(parser.arg1(), parser.arg2())
-                elif command_type == CommandType.C_CALL:
-                    code_writer.write_call(parser.arg1(), parser.arg2())
-                elif command_type == CommandType.C_RETURN:
-                    code_writer.write_return()
-                f.writelines(code_writer.buffer)
-                code_writer.buffer.clear()
+    while parser.hasMoreLines():
+        parser.advance()
 
-    except Exception as e:
-        print(f"Exception: {e}")
+        # If tokens = 0, in comment line
+        if len(parser.tokens) == 0:
+            continue
+
+        command_type = parser.command_type()
+        command = parser.tokens[0]
+
+        print_verbose(f"command_type: {command_type}")
+        print_verbose(f"command: {command}")
+        print_verbose(f"current_fun: {current_fun}")
+
+        if command_type == CommandType.C_ARITHMETIC:
+            code_writer.write_arithmetic(parser.arg1(), current_fun)
+        elif command_type == CommandType.C_PUSH:
+            code_writer.write_push_pop(command, parser.arg1(), parser.arg2())
+        elif command_type == CommandType.C_POP:
+            code_writer.write_push_pop(command, parser.arg1(), parser.arg2())
+        elif command_type == CommandType.C_LABEL:
+            code_writer.write_label(f"{current_fun}${parser.arg1()}")
+        elif command_type == CommandType.C_IF:
+            code_writer.write_if(f"{current_fun}${parser.arg1()}")
+        elif command_type == CommandType.C_GOTO:
+            code_writer.write_goto(f"{current_fun}${parser.arg1()}")
+        elif command_type == CommandType.C_FUNCTION:
+            current_fun = parser.arg1()
+            code_writer.write_function(current_fun, parser.arg2())
+        elif command_type == CommandType.C_CALL:
+            code_writer.write_call(parser.arg1(), parser.arg2())
+        elif command_type == CommandType.C_RETURN:
+            code_writer.write_return()
+        f.writelines(code_writer.buffer)
+        code_writer.buffer.clear()
 
 
 def validate_ext(ctz, self, value: io.TextIOWrapper | None) -> io.TextIOWrapper | None:
@@ -88,11 +95,16 @@ def translate(filename: io.TextIOWrapper | None, verbose: bool) -> None:
     if len(files) == 0:
         print("No Jack .vm files found in current directory")
         exit(1)
+
     set_verbose(verbose)
     print_verbose(f"Files: {files}")
 
-    for name, content in files.items():
-        print_verbose(f"{name} found.")
-        parser = Parser(name, content)
-        parse_file(parser)
-    return
+    try:
+        with open("Out.asm", "w") as f:
+            init_pointer(f, "SP", 256)
+            init_program(f)
+            for name, content in files.items():
+                parser = Parser(name, content)
+                parse_file(parser, name, f)
+    except Exception as e:
+        print(f"Exception: {e}")
