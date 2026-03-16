@@ -1,5 +1,7 @@
 from jv.util import append_verbose
 
+ret_i_dict: dict[str, int] = dict()
+
 
 class CodeWriter:
     def __init__(self, filename: str) -> None:
@@ -140,7 +142,11 @@ class CodeWriter:
         `SP` - `5` - `numArgs` Repositions LCL to SP.  Adds return address label
         at the end
         """
-        ret_i = 0
+        global ret_i_dict
+        if ret_i_dict.get(function_name, None) is None:
+            ret_i_dict[function_name] = 0
+
+        ret_i = ret_i_dict[function_name]
         fun_label = f"{function_name}"
         ret_label = f"{fun_label}$ret.{ret_i}"
         self._write_verbose(f"// Call {function_name} {numArgs}")
@@ -181,7 +187,7 @@ class CodeWriter:
         self._write_line(f"  @{fun_label}")
         self._write_line("  0;JMP")
         self._write_line(f"({ret_label})")
-        ret_i += 1
+        ret_i_dict[function_name] = ret_i + 1
 
     def write_return(self):
         """
@@ -354,7 +360,7 @@ class CodeWriter:
 
         self._pop_d()
 
-        self._write_line(
+        self._write_verbose(
             f"// Popping D into calculated segment '{segment}' index '{index}'"
         )
         self._write_line("  @R13")
