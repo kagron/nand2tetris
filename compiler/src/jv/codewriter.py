@@ -1,4 +1,4 @@
-from jv.util import write_verbose
+from jv.util import append_verbose
 
 
 class CodeWriter:
@@ -14,7 +14,7 @@ class CodeWriter:
         Writes assembly instructions for arithmetic instructions `add`, `sub`
         `neg`, `eq`, `gt`, `lt`, `and`, `or`, and `not`
         """
-        write_verbose(self.buffer, f"// write_arithmetic {command}")
+        self._write_verbose(f"// write_arithmetic {command}")
 
         if command == "add":
             self._pop_d()
@@ -98,7 +98,7 @@ class CodeWriter:
 
     def write_label(self, label: str):
         """Writes assembly instructions for `label`.  Injects label `label`."""
-        write_verbose(self.buffer, f"// Label {label}")
+        self._write_verbose(f"// Label {label}")
         self._write_line(f"({label})")
 
     def write_if(self, label: str):
@@ -107,15 +107,15 @@ class CodeWriter:
         `label` if `D` register is not equal to `0`
         """
 
-        write_verbose(self.buffer, f"// If-goto {label}")
+        self._write_verbose(f"// If-goto {label}")
         self._pop_d()
-        write_verbose(self.buffer, f"// Checking if-goto {label}")
+        self._write_verbose(f"// Checking if-goto {label}")
         self._write_line(f"  @{label}")
         self._write_line("  D;JNE")
 
     def write_goto(self, label: str):
         """Writes assembly instructions for `goto`.  Jumps to `label`."""
-        write_verbose(self.buffer, f"// Goto {label}")
+        self._write_verbose(f"// Goto {label}")
         self._write_line(f"  @{label}")
         self._write_line("  0;JMP")
 
@@ -124,11 +124,11 @@ class CodeWriter:
         Writes assembly instructions for `function`.  Injects function entry
         label, then pushes `0` to stack for `numVars` times
         """
-        write_verbose(self.buffer, f"// Function {function_name} {numVars}")
+        self._write_verbose(f"// Function {function_name} {numVars}")
 
         self._write_line(f"({function_name})")
         for i in range(numVars):
-            write_verbose(self.buffer, f"// Allocating local {i} for {function_name}")
+            self._write_verbose(f"// Allocating local {i} for {function_name}")
             self._write_line("  @0")
             self._write_line("  D=A")
             self._push_d()
@@ -143,26 +143,26 @@ class CodeWriter:
         ret_i = 0
         fun_label = f"{function_name}"
         ret_label = f"{fun_label}$ret.{ret_i}"
-        write_verbose(self.buffer, f"// Call {function_name} {numArgs}")
+        self._write_verbose(f"// Call {function_name} {numArgs}")
         self._write_line(f"  @{ret_label}")
         self._write_line("  D=A")
-        write_verbose(self.buffer, "// Pushing return address to stack")
+        self._write_verbose("// Pushing return address to stack")
         self._push_d()
         self._write_line("  @LCL")
         self._write_line("  D=M")
-        write_verbose(self.buffer, "// Pushing LCL to stack")
+        self._write_verbose("// Pushing LCL to stack")
         self._push_d()
         self._write_line("  @ARG")
         self._write_line("  D=M")
-        write_verbose(self.buffer, "// Pushing ARG to stack")
+        self._write_verbose("// Pushing ARG to stack")
         self._push_d()
         self._write_line("  @THIS")
         self._write_line("  D=M")
-        write_verbose(self.buffer, "// Pushing THIS to stack")
+        self._write_verbose("// Pushing THIS to stack")
         self._push_d()
         self._write_line("  @THAT")
         self._write_line("  D=M")
-        write_verbose(self.buffer, "// Pushing THAT to stack")
+        self._write_verbose("// Pushing THAT to stack")
         self._push_d()
         self._write_line("  @SP")
         self._write_line("  D=M")
@@ -172,7 +172,7 @@ class CodeWriter:
             self._write_line(f"  @{numArgs}")
             self._write_line("  D=D-A")
         self._write_line("  @ARG")
-        write_verbose(self.buffer, "// Setting ARG to SP-5-numArgs")
+        self._write_verbose("// Setting ARG to SP-5-numArgs")
         self._write_line("  M=D")
         self._write_line("  @SP")
         self._write_line("  D=M")
@@ -190,7 +190,7 @@ class CodeWriter:
         Repositions SP to ARG + 1. Restores THAT, THIS, ARG, and LCL.  Goes
         to return address
         """
-        write_verbose(self.buffer, "// Return")
+        self._write_verbose("// Return")
         self._write_line("  @LCL")
         self._write_line("  D=M")
         self._write_line("  @R13")
@@ -199,17 +199,17 @@ class CodeWriter:
         self._write_line("  A=D-A")
         self._write_line("  D=M")  # D=*(frame - 5)
         self._write_line("  @R14")
-        write_verbose(self.buffer, "// Storing returnAddr as LCL-5 into R14")
+        self._write_verbose("// Storing returnAddr as LCL-5 into R14")
         self._write_line("  M=D")  # retAddr(R14) = *(frame - 5)
         self._pop_d()
         self._write_line("  @ARG")
         self._write_line("  A=M")
-        write_verbose(self.buffer, "// Popping D into ARG dereferenced value")
+        self._write_verbose("// Popping D into ARG dereferenced value")
         self._write_line("  M=D")  # *ARG = pop()
         self._write_line("  @ARG")
         self._write_line("  D=M")
         self._write_line("  @SP")
-        write_verbose(self.buffer, "// SP = Arg + 1")
+        self._write_verbose("// SP = Arg + 1")
         self._write_line("  M=D+1")  # SP = ARG + 1
 
         self._write_line("  @R13")
@@ -246,7 +246,7 @@ class CodeWriter:
 
     def _push_d(self):
         """Pushes D register onto stack.  A will be at @SP"""
-        write_verbose(self.buffer, "// Push D")
+        self._write_verbose("// Push D")
         self._write_line("  @SP")
         self._write_line("  A=M")
         self._write_line("  M=D")
@@ -254,7 +254,7 @@ class CodeWriter:
 
     def _pop_d(self):
         """Pops stack into D register.  A will be at @SP"""
-        write_verbose(self.buffer, "// Pop D")
+        self._write_verbose("// Pop D")
         self._write_line("  @SP")
         self._write_line("  A=M-1")
         self._write_line("  D=M")
@@ -262,19 +262,19 @@ class CodeWriter:
 
     def _incSP(self):
         """Incremenets stack pointer.  A will be at @SP"""
-        write_verbose(self.buffer, "// Incrementing SP")
+        self._write_verbose("// Incrementing SP")
         self._write_line("  @SP")
         self._write_line("  M=M+1")
 
     def _decSP(self):
         """Decrements stack pointer.  A will be at @SP"""
-        write_verbose(self.buffer, "// Decrementing SP")
+        self._write_verbose("// Decrementing SP")
         self._write_line("  @SP")
         self._write_line("  M=M-1")
 
     def _pop(self, segment: str, index: int):
         """Handles `pop` instructions"""
-        write_verbose(self.buffer, f"// Pop {segment} {index}")
+        self._write_verbose(f"// Pop {segment} {index}")
 
         if segment == "local":
             if index == 0:
@@ -306,7 +306,7 @@ class CodeWriter:
 
     def _push(self, segment: str, index: int):
         """Handles `push` instructions"""
-        write_verbose(self.buffer, f"// Push {segment} {index}")
+        self._write_verbose(f"// Push {segment} {index}")
         if segment == "local":
             if index == 0:
                 self._load_segment_d("LCL")
@@ -344,9 +344,7 @@ class CodeWriter:
     def _store_d_index(self, segment: str, index: int):
         """Stores D register at base segment + index"""
         # TODO: Can I optimize this without using R13 for storing segment + index?
-        write_verbose(
-            self.buffer, f"// Storing D at segment '{segment}' index '{index}'"
-        )
+        self._write_verbose(f"// Storing D at segment '{segment}' index '{index}'")
         self._write_line(f"  @{index}")
         self._write_line("  D=A")
         self._write_line(f"  @{segment}")
@@ -365,7 +363,7 @@ class CodeWriter:
 
     def _store_d_segment(self, segment: str):
         """Stores D register at base segment"""
-        write_verbose(self.buffer, f"// Storing D at segment '{segment}'")
+        self._write_verbose(f"// Storing D at segment '{segment}'")
         self._pop_d()
         self._write_line(f"  @{segment}")
         self._write_line("  A=M")
@@ -373,16 +371,14 @@ class CodeWriter:
 
     def _store_d_ram(self, address: str):
         """Goes to RAM[address] and stores D Register there"""
-        write_verbose(self.buffer, f"// Storing D at RAM['{address}']")
+        self._write_verbose(f"// Storing D at RAM['{address}']")
         self._pop_d()
         self._write_line(f"  @{address}")
         self._write_line("  M=D")
 
     def _load_index_d(self, segment: str, index: int):
         """Goes to base segment + index and stores value into D Register"""
-        write_verbose(
-            self.buffer, f"// Loading D from segment '{segment}' index '{index}'"
-        )
+        self._write_verbose(f"// Loading D from segment '{segment}' index '{index}'")
         self._write_line(f"  @{index}")
         self._write_line("  D=A")
         self._write_line(f"  @{segment}")
@@ -391,16 +387,19 @@ class CodeWriter:
 
     def _load_segment_d(self, segment: str):
         """Goes to base segment and stores value into D Register"""
-        write_verbose(self.buffer, f"// Loading D from segment '{segment}'")
+        self._write_verbose(f"// Loading D from segment '{segment}'")
         self._write_line(f"  @{segment}")
         self._write_line("  A=M")
         self._write_line("  D=M")
 
     def _load_ram_d(self, address: str):
         """Goes to RAM[address] and stores value into D Register"""
-        write_verbose(self.buffer, f"// Loading D from RAM['{address}']")
+        self._write_verbose(f"// Loading D from RAM['{address}']")
         self._write_line(f"  @{address}")
         self._write_line("  D=M")
+
+    def _write_verbose(self, line: str):
+        append_verbose(self.buffer, line)
 
     def _write_line(self, line: str):
         self.buffer.append(f"{line}\n")
