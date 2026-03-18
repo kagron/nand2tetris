@@ -1,0 +1,5 @@
+function Sys.init 0
+  push constant 7
+  call Factorial.factorial 1
+label END
+goto END

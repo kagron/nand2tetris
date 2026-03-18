@@ -1,6 +1,4 @@
-goto Sys.init
-
-function Mult 2
+function Mult.mult 2
   push constant 0
   pop local 0 // sum
   push constant 0
@@ -23,11 +21,3 @@ label WHILE_LOOP
 label WHILE_END
   push local 0
   return
-
-
-function Sys.init 0
-  push constant 4
-  push constant 4
-  call Mult 2
-label END
-goto END

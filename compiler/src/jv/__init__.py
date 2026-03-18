@@ -17,10 +17,7 @@ def init_pointer(f: io.TextIOWrapper, pointer_name: str, base_address_loc: int):
 
 def init_program(f: io.TextIOWrapper):
     """Initializes program by calling Sys.init at beginning of program"""
-    # TODO: Probably a better way to do this but its too late in the process
-    cw = CodeWriter("")
-    cw.write_call("Sys.init", 0)
-    f.writelines(cw.buffer)
+    f.writelines(["@Sys.init\n", "0;JMP\n"])
 
 
 def parse_file(parser: Parser, filename: str, f: io.TextIOWrapper):

@@ -1,0 +1,15 @@
+function Factorial.factorial 0
+  push argument 0
+  push constant 1
+  eq
+  if-goto BASE_CASE
+  push argument 0
+  push argument 0
+  push constant 1
+  sub
+  call Factorial.factorial 1
+  call Mult.mult 2
+  return
+label BASE_CASE
+  push constant 1
+  return
