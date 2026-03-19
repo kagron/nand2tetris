@@ -2,7 +2,20 @@ import click
 import io
 import os
 
+from jc.tokenizer import TokenType, Tokenizer
+
 from .util import print_verbose, set_verbose
+
+
+def analyze(tokenizer: Tokenizer):
+    while tokenizer.has_more_tokens():
+        tokenizer.advance()
+        token = tokenizer.current_token
+        token_type = tokenizer.token_type()
+        token_str = f" token: '{token}', token_type: '{tokenizer.token_type().name}'"
+        if token_type == TokenType.KEYWORD:
+            token_str += f", keyword: '{tokenizer.key_word()}'"
+        print(token_str)
 
 
 def validate_ext(ctz, self, value: io.TextIOWrapper | None) -> io.TextIOWrapper | None:
@@ -41,9 +54,10 @@ def compile(filename: io.TextIOWrapper | None, verbose: bool) -> None:
     print_verbose(f"Files: {files}")
 
     try:
-        with open("Out.vm", "w") as f:
-            for name, content in files.items():
-                print("yo")
+        for name, content in files.items():
+            with open(f"{name[:-5]}.vm", "w") as f:
+                tokenizer = Tokenizer(f.name, content)
+                analyze(tokenizer)
     except Exception as e:
         print(f"Exception: {e}")
     return

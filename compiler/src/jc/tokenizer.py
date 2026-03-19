@@ -1,106 +1,61 @@
-from enum import Enum, auto
+import re
+from jc.spec import TOKEN_REGEX, TokenType, KeywordType
 from .util import print_verbose
-
-
-class TokenType(Enum):
-    KEYWORD = auto()
-    SYMBOL = auto()
-    IDENIFIER = auto()
-    INT_CONST = auto()
-    STRING_CONST = auto()
-    INVALID = auto()
-
-
-class KeywordType(Enum):
-    CLASS = auto()
-    METHOD = auto()
-    FUNCTION = auto()
-    CONSTRUCTOR = auto()
-    INT = auto()
-    BOOLEAN = auto()
-    CHAR = auto()
-    VOID = auto()
-    VAR = auto()
-    STATIC = auto()
-    FIELD = auto()
-    LET = auto()
-    DO = auto()
-    IF = auto()
-    ELSE = auto()
-    WHILE = auto()
-    RETURN = auto()
-    TRUE = auto()
-    FALSE = auto()
-    NULL = auto()
-    THIS = auto()
-    INVALID = auto()
-
-
-SYMBOLS = [
-    "{",
-    "}",
-    "(",
-    ")",
-    r"\[",
-    r"\]",
-    ".",
-    ",",
-    ";",
-    "+",
-    r"\-",
-    "*",
-    "/",
-    "&",
-    "|",
-    "<",
-    ">",
-    "=",
-    "~",
-]
-
-KEYWORD_NAMES = "|".join(
-    [
-        ktype.name.lower()
-        for ktype in list(KeywordType)
-        if ktype is not KeywordType.INVALID
-    ]
-)
-SYMBOL_STRS = "".join(SYMBOLS)
-TOKEN_SPEC = [
-    (TokenType.KEYWORD, rf"({KEYWORD_NAMES})"),
-    (TokenType.SYMBOL, rf"[{SYMBOL_STRS}]"),
-]
 
 
 class Tokenizer:
     def __init__(self, filename: str, contents: str):
         self.filename = filename
-        self.contents = contents.splitlines()
-        print_verbose(f"Number of lines: {len(self.contents)}")
-        print_verbose(f"Contents: {self.contents}")
+        # self.contents = contents.splitlines()
         # self.line_no = -1
+        self.tokens = contents.split()
         self.current_token = ""
+        self.current_token_i = -1
 
     def has_more_tokens(self) -> bool:
-        return True
+        return self.current_token_i + 1 < len(self.tokens)
 
     def advance(self):
-        pass
+        self.current_token_i += 1
+        self.current_token = self.tokens[self.current_token_i].rstrip(";")
 
     def token_type(self) -> TokenType:
-        return TokenType.INVALID
+        match = re.match(TOKEN_REGEX, self.current_token)
+        if match is None or match.lastgroup is None:
+            return TokenType.INVALID
+
+        return TokenType[match.lastgroup]
 
     def key_word(self) -> KeywordType:
-        return KeywordType.INVALID
+        assert self.token_type() == TokenType.KEYWORD, (
+            f"Token '{self.current_token}' is not a valid keyword!"
+        )
+        return KeywordType[self.current_token.upper()]
 
     def symbol(self) -> str:
-        return ""
+        assert self.token_type() == TokenType.SYMBOL, (
+            f"Token '{self.current_token}' is not a valid symbol!"
+        )
+        return self.current_token
 
     def identifier(self) -> str:
-        return ""
+        assert self.token_type() == TokenType.SYMBOL, (
+            f"Token '{self.current_token}' is not a valid symbol!"
+        )
+        return self.current_token
 
     def int_val(self) -> int:
-        return 0
+        assert self.token_type() == TokenType.INT_CONST, (
+            f"Token '{self.current_token}' is not an integer!"
+        )
+        int_val = int(self.current_token)
+        assert int_val >= 0 and int_val < 32767, (
+            f"Integer '{int_val}' must be between 0-32767"
+        )
+        return int_val
 
     def string_val(self) -> str:
-        return ""
+        assert self.token_type() == TokenType.STRING_CONST, (
+            f"Token '{self.current_token}' is not a valid String!"
+        )
+        return self.current_token

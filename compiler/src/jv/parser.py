@@ -21,7 +21,6 @@ class Parser:
         self.contents = contents.splitlines()
         print_verbose(f"Number of lines: {len(self.contents)}")
         print_verbose(f"Contents: {self.contents}")
-        self.symbol_line_no = -1
         self.actual_line_no = -1
         self.current_line = ""
 
