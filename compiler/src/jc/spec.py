@@ -7,6 +7,8 @@ class TokenType(Enum):
     IDENIFIER = auto()
     INT_CONST = auto()
     STRING_CONST = auto()
+    NEWLINE = auto()
+    SKIP = auto()
     INVALID = auto()
 
 
@@ -71,6 +73,9 @@ TOKEN_SPEC = [
     (TokenType.STRING_CONST, r'"[^"\n]+"'),
     (TokenType.IDENIFIER, r"[a-zA-Z]+\w+"),
     (TokenType.INT_CONST, r"\d+"),
+    (TokenType.NEWLINE, r"\n"),
+    (TokenType.SKIP, r"[ \t]"),
+    (TokenType.INVALID, r"."),
 ]
 
 TOKEN_REGEX = "|".join("(?P<%s>%s)" % (pair[0].name, pair[1]) for pair in TOKEN_SPEC)

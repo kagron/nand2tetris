@@ -11,11 +11,7 @@ def analyze(tokenizer: Tokenizer):
     while tokenizer.has_more_tokens():
         tokenizer.advance()
         token = tokenizer.current_token
-        token_type = tokenizer.token_type()
-        token_str = f" token: '{token}', token_type: '{tokenizer.token_type().name}'"
-        if token_type == TokenType.KEYWORD:
-            token_str += f", keyword: '{tokenizer.key_word()}'"
-        print(token_str)
+        print(token)
 
 
 def validate_ext(ctz, self, value: io.TextIOWrapper | None) -> io.TextIOWrapper | None:
