@@ -1,0 +1,8 @@
+/** Prints "Hello World".  File name: Main.jack */
+class Main {
+  function void main() {
+      do Output.printString("Hello World");
+      do Output.println();
+      return;
+  }
+}
