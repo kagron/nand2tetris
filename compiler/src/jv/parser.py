@@ -31,7 +31,6 @@ class Parser:
     def advance(self):
         self.actual_line_no += 1
         self.current_line = self.contents[self.actual_line_no]
-        # TODO: Add symbols / functions
         print_verbose(f"current_line: {self.current_line}")
         self.tokens = self.current_line.split("//")[0].strip().split(" ")
         print_verbose(f"tokens: {self.tokens}")
