@@ -3,7 +3,11 @@ from jc.abstract_engine import AbstractEngine
 
 class XmlCompileEngine(AbstractEngine):
     def compileClass(self):
-        pass
+        self._write_line("<class>")
+        self._inc_indent_lvl()
+
+        self._write_line("</class>")
+        self._dec_indent_lvl()
 
     def compileClassVarDec(self):
         pass
