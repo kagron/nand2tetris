@@ -14,7 +14,6 @@ class Tokenizer:
     def __init__(self, filename: str, contents: str):
         self.filename = filename
         self.contents = contents
-        # self.line_no = -1
         self.tokens = list(self.try_tokenize())
         self.current_token_i = -1
 
@@ -25,9 +24,11 @@ class Tokenizer:
             potential_type = match.lastgroup
             if potential_type is None:
                 raise RuntimeError(f"Unreachable(?) None token found '{match}'!")
+
             token_type = TokenType[potential_type]
             value = match.group()
             column = match.start() - line_start
+
             if token_type == TokenType.NEWLINE:
                 line_no += 1
                 line_start = match.end()
