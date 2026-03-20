@@ -4,7 +4,7 @@ import os
 
 from jc.spec import KeywordType, TokenType
 from jc.tokenizer import Tokenizer
-from jc.abstract_engine import AbstractCompileEngine
+from jc.abstract_compile_engine import AbstractCompileEngine
 from jc.xml_compile_engine import XmlCompileEngine
 
 from .util import print_verbose, set_verbose

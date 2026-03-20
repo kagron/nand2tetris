@@ -36,7 +36,7 @@ class Tokenizer:
             if token_type == TokenType.INVALID:
                 raise RuntimeError(f"Invalid token found '{match}'!")
             self.current_token = Token(
-                token_type, value.replace('"', ""), (line_no, column + 1)
+                token_type, value.lstrip('"').rstrip('"'), (line_no, column + 1)
             )
             yield self.current_token
 
