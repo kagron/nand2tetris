@@ -4,7 +4,7 @@ from enum import Enum, auto
 class TokenType(Enum):
     KEYWORD = auto()
     SYMBOL = auto()
-    IDENIFIER = auto()
+    IDENTIFIER = auto()
     INT_CONST = auto()
     STRING_CONST = auto()
     NEWLINE = auto()
@@ -71,7 +71,7 @@ TOKEN_SPEC = [
     (TokenType.KEYWORD, rf"({KEYWORD_NAMES})"),
     (TokenType.SYMBOL, rf"[{''.join(SYMBOLS)}]"),
     (TokenType.STRING_CONST, r'"[^"\n]+"'),
-    (TokenType.IDENIFIER, r"[a-zA-Z]+\w+"),
+    (TokenType.IDENTIFIER, r"[a-zA-Z]+\w?"),
     (TokenType.INT_CONST, r"\d+"),
     (TokenType.NEWLINE, r"\n"),
     (TokenType.SKIP, r"[ \t]"),

@@ -14,8 +14,6 @@ class Tokenizer:
     def __init__(self, filename: str, contents: str):
         self.filename = filename
         self.contents = contents
-        self.tokens = list(self.try_tokenize())
-        self.current_token_i = -1
 
     def try_tokenize(self):
         line_no = 1
@@ -37,14 +35,10 @@ class Tokenizer:
                 continue
             if token_type == TokenType.INVALID:
                 raise RuntimeError(f"Invalid token found '{match}'!")
-            yield Token(token_type, value, (line_no, column + 1))
-
-    def has_more_tokens(self) -> bool:
-        return self.current_token_i + 1 < len(self.tokens)
-
-    def advance(self):
-        self.current_token_i += 1
-        self.current_token = self.tokens[self.current_token_i]
+            self.current_token = Token(
+                token_type, value.replace('"', ""), (line_no, column + 1)
+            )
+            yield self.current_token
 
     def token_type(self) -> TokenType:
         return self.current_token.token_type

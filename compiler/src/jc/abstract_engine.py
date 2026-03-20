@@ -1,32 +1,34 @@
 from abc import ABC, abstractmethod
+from typing import Generator
 
 from jc.util import append_verbose
+from jc.tokenizer import Token, Tokenizer
 
 INDENT = "  "
 
 
-class AbstractEngine(ABC):
+class AbstractCompileEngine(ABC):
     def __init__(self, buffer: list[str]):
         self.buffer = buffer
-        self.indent_lvl = 1
+        self.indent_lvl = 0
 
     @abstractmethod
-    def compileClass(self):
+    def compile_class(self):
         """Compiles a complete `class`"""
         pass
 
     @abstractmethod
-    def compileClassVarDec(self):
+    def compile_class_var_dec(self):
         """Compiles a static variable declaration, or a field declaration"""
         pass
 
     @abstractmethod
-    def compileSubroutine(self):
+    def compile_subroutine(self):
         """Compiles a complete `method`, `function`, or `constructor`"""
         pass
 
     @abstractmethod
-    def compileParameterList(self):
+    def compile_parameter_list(self):
         """
         Compiles a (possibly empty) parameter list.  Does not handle the
         enclosing parentheses tokens `(` and `)`.
@@ -34,17 +36,17 @@ class AbstractEngine(ABC):
         pass
 
     @abstractmethod
-    def compileSubroutineBody(self):
+    def compile_subroutine_body(self):
         """Compiles a subroutine's body"""
         pass
 
     @abstractmethod
-    def compileVarDec(self):
+    def compile_var_dec(self):
         """Compiles a `var` declaration"""
         pass
 
     @abstractmethod
-    def compileStatements(self):
+    def compile_statements(self):
         """
         Compiles a sequence of statements.  Does not handle the enclosing
         curly bracket tokens `{` and `}`.
@@ -52,37 +54,37 @@ class AbstractEngine(ABC):
         pass
 
     @abstractmethod
-    def compileLet(self):
+    def compile_let(self):
         """Compiles a `let` statement"""
         pass
 
     @abstractmethod
-    def compileIf(self):
+    def compile_if(self):
         """Compiles a `if` statement, possibly with a trailing `else` statement"""
         pass
 
     @abstractmethod
-    def compileWhile(self):
+    def compile_while(self):
         """Compiles a `while` statement"""
         pass
 
     @abstractmethod
-    def compileDo(self):
+    def compile_do(self):
         """Compiles a `do` statement"""
         pass
 
     @abstractmethod
-    def compileReturn(self):
+    def compile_return(self):
         """Compiles a `return` statement"""
         pass
 
     @abstractmethod
-    def compileExpression(self):
+    def compile_expression(self):
         """Compiles an expression"""
         pass
 
     @abstractmethod
-    def compileTerm(self):
+    def compile_term(self):
         """
         Compiles a `term`.  If the current token is an `identifier`, the
         routine must resolve it into a `variable`, an `array element`
@@ -94,12 +96,18 @@ class AbstractEngine(ABC):
         pass
 
     @abstractmethod
-    def compileExpressionList(self) -> int:
+    def compile_expression_list(self) -> int:
         """
         Compiles a (possibly empty) comma-separated list of expressions.
         Returns the number of expressions in the list
         """
         pass
+
+    def set_current_token(self, token: Token):
+        self.token = token
+
+    def set_token_generator(self, token_generator: Generator):
+        self.token_generator = token_generator
 
     def _inc_indent_lvl(self):
         self.indent_lvl += 1
