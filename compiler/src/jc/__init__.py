@@ -10,20 +10,19 @@ from jc.xml_compile_engine import XmlCompileEngine
 from .util import print_verbose, set_verbose
 
 
-def analyze(tokenizer: Tokenizer, compiler: AbstractCompileEngine, tokens_only: bool):
+def analyze(
+    tokenizer: Tokenizer, compiler: AbstractCompileEngine, tokens_only: bool
+) -> None:
     if tokens_only:
         compiler.buffer.append("<tokens>\n")
 
-    token_generator = tokenizer.try_tokenize()
-    first_token = next(token_generator)
-
-    compiler.set_current_token(first_token)
-    compiler.set_token_generator(token_generator)
+    tokenizer.tokenize_line()
+    tokenizer.advance()
 
     if tokens_only:
         compiler.compile_term()
     elif (
-        first_token.token_type == TokenType.KEYWORD
+        tokenizer.token_type() == TokenType.KEYWORD
         and tokenizer.key_word() == KeywordType.CLASS
     ):
         compiler.compile_class()
@@ -32,8 +31,10 @@ def analyze(tokenizer: Tokenizer, compiler: AbstractCompileEngine, tokens_only: 
         compiler.buffer.append("</tokens>\n")
 
 
-def get_engine(output_xml: bool, buffer: list[str]) -> AbstractCompileEngine:
-    return XmlCompileEngine(buffer)
+def get_engine(
+    output_xml: bool, tokenizer: Tokenizer, buffer: list[str]
+) -> AbstractCompileEngine:
+    return XmlCompileEngine(buffer, tokenizer)
 
 
 def validate_ext(ctz, self, value: io.TextIOWrapper | None) -> io.TextIOWrapper | None:
@@ -58,18 +59,15 @@ def compile(
     tokens_only: bool,
 ) -> None:
     """Compilse Jack code into Jack VM code"""
-    files: dict[str, str] = dict()
-    if filename is not None:
-        files[filename.name] = filename.read()
-        filename.close()
-    else:
-        for file in os.listdir("."):
-            if file.endswith(".jack"):
-                try:
-                    with open(file, "r") as file:
-                        files[file.name] = file.read()
-                except Exception:
-                    print(f"The file {file} could not be opened.")
+    files: list[io.TextIOWrapper] = []
+    try:
+        if filename is not None:
+            files.append(filename)
+        else:
+            files = [open(file) for file in os.listdir(".") if file.endswith(".jack")]
+    except Exception as e:
+        print("Could not open .jack files")
+        print(f"{e}")
 
     if len(files) == 0:
         print("No Jack .jack files found in current directory")
@@ -85,13 +83,10 @@ def compile(
         ext = "T.xml"
     elif output_xml:
         ext = ".xml"
-    try:
-        for name, content in files.items():
-            with open(f"{name[:-5]}{ext}", "w") as f:
-                tokenizer = Tokenizer(f.name, content)
-                buffer = list()
-                analyze(tokenizer, get_engine(output_xml, buffer), tokens_only)
-                f.writelines(buffer)
-    except Exception as e:
-        print(f"Exception: {e}")
-    return
+    for file in files:
+        with open(f"{file.name[:-5]}{ext}", "w") as f:
+            tokenizer = Tokenizer(file)
+            buffer = list()
+            analyze(tokenizer, get_engine(output_xml, tokenizer, buffer), tokens_only)
+            f.writelines(buffer)
+            f.close()

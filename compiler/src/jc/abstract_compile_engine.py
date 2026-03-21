@@ -8,8 +8,9 @@ INDENT = "  "
 
 
 class AbstractCompileEngine(ABC):
-    def __init__(self, buffer: list[str]):
+    def __init__(self, buffer: list[str], tokenizer: Tokenizer):
         self.buffer = buffer
+        self.tokenizer = tokenizer
         self.indent_lvl = 0
 
     @abstractmethod
@@ -102,12 +103,6 @@ class AbstractCompileEngine(ABC):
         Returns the number of expressions in the list
         """
         pass
-
-    def set_current_token(self, token: Token):
-        self.token = token
-
-    def set_token_generator(self, token_generator: Generator):
-        self.token_generator = token_generator
 
     def _inc_indent_lvl(self):
         self.indent_lvl += 1

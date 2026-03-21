@@ -1,6 +1,8 @@
+from io import TextIOWrapper
 import re
 from dataclasses import dataclass
 from jc.spec import TOKEN_REGEX, TokenType, KeywordType
+from jc.util import print_verbose
 
 
 @dataclass
@@ -11,34 +13,56 @@ class Token:
 
 
 class Tokenizer:
-    def __init__(self, filename: str, contents: str):
-        self.filename = filename
-        self.contents = contents
+    def __init__(self, file: TextIOWrapper) -> None:
+        self.file = file
+        self.current_line_no = 1
+        self.line_start = 0
+        self.current_line = file.readline()
+        self.current_iterator_i = 0
 
-    def try_tokenize(self):
-        line_no = 1
-        line_start = 0
-        for match in re.finditer(TOKEN_REGEX, self.contents):
-            potential_type = match.lastgroup
-            if potential_type is None:
-                raise RuntimeError(f"Unreachable(?) None token found '{match}'!")
+    def tokenize_line(self) -> None:
+        self.iterator = re.finditer(TOKEN_REGEX, self.current_line)
 
-            token_type = TokenType[potential_type]
-            value = match.group()
-            column = match.start() - line_start
+    # def analyze_token(self, match: re.Match[str]) -> Token:
 
-            if token_type == TokenType.NEWLINE:
-                line_no += 1
-                line_start = match.end()
-                continue
-            if token_type == TokenType.SKIP:
-                continue
-            if token_type == TokenType.INVALID:
-                raise RuntimeError(f"Invalid token found '{match}'!")
-            self.current_token = Token(
-                token_type, value.lstrip('"').rstrip('"'), (line_no, column + 1)
-            )
-            yield self.current_token
+    def advance(self):
+        match = next(self.iterator)
+        potential_type = match.lastgroup
+        if potential_type is None:
+            raise RuntimeError(f"Unreachable(?) None token found '{match}'!")
+
+        token_type = TokenType[potential_type]
+        value = match.group()
+        column = match.start() - self.line_start
+
+        if token_type == TokenType.NEWLINE:
+            print_verbose("hit new line")
+            if self.has_more_tokens():
+                self.current_line = self.file.readline()
+                self.current_line_no += 1
+                self.line_start = 0
+                self.tokenize_line()
+                self.advance()
+                return
+            else:
+                raise RuntimeError("No more tokens left!")
+        elif token_type == TokenType.SKIP:
+            self.advance()
+            return
+        elif token_type == TokenType.INVALID:
+            raise RuntimeError(f"Invalid token found '{match}'!")
+        self.current_token = Token(
+            token_type,
+            value.lstrip('"').rstrip('"'),
+            (self.current_line_no, column + 1),
+        )
+        print_verbose(f"Advance: {self.current_token}")
+
+    def has_more_tokens(self) -> bool:
+        cur_pos = self.file.tell()
+        has_more_lines = bool(self.file.readline())
+        self.file.seek(cur_pos)
+        return has_more_lines
 
     def token_type(self) -> TokenType:
         return self.current_token.token_type

@@ -71,7 +71,7 @@ TOKEN_SPEC = [
     (TokenType.KEYWORD, rf"({KEYWORD_NAMES})"),
     (TokenType.SYMBOL, rf"[{''.join(SYMBOLS)}]"),
     (TokenType.STRING_CONST, r'"[^"\n]+"'),
-    (TokenType.IDENTIFIER, r"[a-zA-Z]+\w?"),
+    (TokenType.IDENTIFIER, r"[a-zA-Z_]+\w?"),
     (TokenType.INT_CONST, r"\d+"),
     (TokenType.NEWLINE, r"\n"),
     (TokenType.SKIP, r"[ \t]"),
