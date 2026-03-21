@@ -59,6 +59,8 @@ class Tokenizer:
         print_verbose(f"Advance: {self.current_token}")
 
     def has_more_tokens(self) -> bool:
+        # FIXME: This really only checks if there's another line but my approach
+        # seems to not care?
         cur_pos = self.file.tell()
         has_more_lines = bool(self.file.readline())
         self.file.seek(cur_pos)

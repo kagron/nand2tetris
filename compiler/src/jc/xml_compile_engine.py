@@ -9,7 +9,7 @@ class XmlCompileEngine(AbstractCompileEngine):
         current_val = current_token.value
         if expected_token is not None and expected_token != current_val:
             raise RuntimeError(
-                f"Expecting token '{expected_token}' but found token '{current_val}'"
+                f"Expecting token '{expected_token}' but found token '{current_token}'"
             )
         token_type = current_token.token_type.name.lower()
 
