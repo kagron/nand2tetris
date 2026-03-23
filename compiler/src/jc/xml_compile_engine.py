@@ -258,10 +258,6 @@ class XmlCompileEngine(AbstractCompileEngine):
         print_verbose("compile_expression")
 
         token_type = self.tokenizer.token_type()
-        # if token_type == TokenType.SYMBOL and self.tokenizer.symbol() == ")":
-        #     # Empty expression
-        #     print("Empty expression")
-        #     return
 
         self._write_line("<expression>")
         self._inc_indent_lvl()
@@ -326,15 +322,12 @@ class XmlCompileEngine(AbstractCompileEngine):
                         self.compile_expression()
                         self.process_token(")")
                         is_compiling = False
-                    # elif symbol == ")":
-                    #     continue
                     elif symbol in ["-", "~"]:
                         # Unary Op
                         self.process_token()
                         self.process_token()
                         is_compiling = False
                     else:
-                        # self.process_token()
                         is_compiling = False
                 case TokenType.KEYWORD:
                     if self.tokenizer.key_word().name.lower() in [
@@ -356,13 +349,11 @@ class XmlCompileEngine(AbstractCompileEngine):
                         match self.tokenizer.symbol():
                             case "(":
                                 self.process_token("(")
-                                print("identifier calling compile_expression")
                                 self.compile_expression()
                                 self.process_token(")")
                                 is_compiling = False
                             case "[":
                                 self.process_token("[")
-                                print("identifier calling compile_expression")
                                 self.compile_expression()
                                 self.process_token("]")
                                 is_compiling = False
