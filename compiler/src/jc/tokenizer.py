@@ -23,8 +23,6 @@ class Tokenizer:
     def tokenize_line(self) -> None:
         self.iterator = re.finditer(TOKEN_REGEX, self.current_line)
 
-    # def analyze_token(self, match: re.Match[str]) -> Token:
-
     def advance(self):
         match = next(self.iterator)
         potential_type = match.lastgroup
@@ -54,7 +52,7 @@ class Tokenizer:
         self.current_token = Token(
             token_type,
             value.lstrip('"').rstrip('"'),
-            (self.current_line_no, column + 1),
+            (self.current_line_no, column),
         )
         print_verbose(f"Advance: {self.current_token}")
 

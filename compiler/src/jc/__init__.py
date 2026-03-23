@@ -13,22 +13,14 @@ from .util import print_verbose, set_verbose
 def analyze(
     tokenizer: Tokenizer, compiler: AbstractCompileEngine, tokens_only: bool
 ) -> None:
-    if tokens_only:
-        compiler.buffer.append("<tokens>\n")
-
     tokenizer.tokenize_line()
     tokenizer.advance()
 
-    if tokens_only:
-        compiler.compile_term()
-    elif (
+    if (
         tokenizer.token_type() == TokenType.KEYWORD
         and tokenizer.key_word() == KeywordType.CLASS
     ):
         compiler.compile_class()
-
-    if tokens_only:
-        compiler.buffer.append("</tokens>\n")
 
 
 def get_engine(

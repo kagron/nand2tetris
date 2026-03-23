@@ -1,5 +1,7 @@
+from jc import tokenizer
 from jc.abstract_compile_engine import AbstractCompileEngine
-from jc.spec import KeywordType, TokenType
+from jc.spec import SYMBOLS, KeywordType, TokenType
+from jc.tokenizer import Token
 from jc.util import print_verbose
 
 
@@ -32,7 +34,7 @@ class XmlCompileEngine(AbstractCompileEngine):
         self._write_line(f"<{token_type}>{token_val}</{token_type}>")
 
     def process_token(self, expected_token: str | None = None):
-        print_verbose("Processing token")
+        print_verbose(f"Processing token, expected_token: {expected_token}")
         self.compile_token(expected_token)
         if self.tokenizer.has_more_tokens():
             self.tokenizer.advance()
@@ -235,7 +237,13 @@ class XmlCompileEngine(AbstractCompileEngine):
         self._write_line("<returnStatement>")
         self._inc_indent_lvl()
         self.process_token("return")
-        # TODO: Add expression handling here
+        token_type = self.tokenizer.token_type()
+        while self.tokenizer.has_more_tokens() and not (
+            token_type == TokenType.SYMBOL and self.tokenizer.symbol() == ";"
+        ):
+            print(f"I bet its here: {self.tokenizer.current_token}")
+            self.compile_expression()
+            token_type = self.tokenizer.token_type()
         self.process_token(";")
         self._dec_indent_lvl()
         self._write_line("</returnStatement>")
@@ -247,22 +255,133 @@ class XmlCompileEngine(AbstractCompileEngine):
         # my_var & this_var
         # my_var & this_var & that_var -> term op term op term
         # my_var | (this_var + that_var) -> term op term
-        self._write_line("<expression>")
-        self._inc_indent_lvl()
-        self.compile_term()
+        print_verbose("compile_expression")
 
         token_type = self.tokenizer.token_type()
-        if token_type == TokenType.SYMBOL:
-            # Found op or term
-            self.process_token()
-            if token_type == TokenType.SYMBOL:
-                pass
+        # if token_type == TokenType.SYMBOL and self.tokenizer.symbol() == ")":
+        #     # Empty expression
+        #     print("Empty expression")
+        #     return
 
+        self._write_line("<expression>")
+        self._inc_indent_lvl()
+
+        token_type = self.tokenizer.token_type()
+        op_found = False
+        first_token = True
+        while self.tokenizer.has_more_tokens() and not (
+            token_type == TokenType.SYMBOL and self.tokenizer.symbol() in [";", ")"]
+        ):
+            match token_type:
+                case TokenType.SYMBOL:
+                    symbol = self.tokenizer.symbol()
+                    if symbol in ["("]:
+                        self.compile_term()
+                        op_found = False
+                    elif symbol in ["-", "~"] and (op_found or first_token):
+                        self.compile_term()
+                        op_found = False
+                    else:
+                        if (
+                            symbol in ["+", "-", "*", "/", "&", "|", "<", ">", "="]
+                            and not first_token
+                            and not op_found
+                        ):
+                            op_found = True
+                        self.process_token()
+                case (
+                    TokenType.INT_CONST | TokenType.STRING_CONST | TokenType.IDENTIFIER
+                ):
+                    self.compile_term()
+                    op_found = False
+            token_type = self.tokenizer.token_type()
+            first_token = False
         self._dec_indent_lvl()
         self._write_line("</expression>")
 
     def compile_term(self):
-        pass
+        # 10 -> int_const
+        # (this_var + that_var) -> symbol identifier symbol identifier symbol
+        # my_array[0] -> identifier symbol int_const symbol
+        # -10 -> symbol int_const
+        # my_obj.this_subroutine_call() -> identifier symbol identifier symbol symbol
+        # my_array[this_var] -> identifier symbol identifier symbol
+        # my_array[that_var + 1] -> identifier symbol identifier symbol int_const symbol
+        # count() -> identifier symbol symbol
+        print_verbose("compile_term")
+        self._write_line("<term>")
+        self._inc_indent_lvl()
+        token_type = self.tokenizer.token_type()
+        is_compiling = True
+        while self.tokenizer.has_more_tokens() and is_compiling:
+            match token_type:
+                case TokenType.INT_CONST | TokenType.STRING_CONST:
+                    self.process_token()
+                    is_compiling = False
+                case TokenType.SYMBOL:
+                    symbol = self.tokenizer.symbol()
+                    if symbol == "(":
+                        self.process_token("(")
+                        print("calling compile_expression")
+                        self.compile_expression()
+                        self.process_token(")")
+                        is_compiling = False
+                    # elif symbol == ")":
+                    #     continue
+                    elif symbol in ["-", "~"]:
+                        # Unary Op
+                        self.process_token()
+                        self.process_token()
+                        is_compiling = False
+                    else:
+                        # self.process_token()
+                        is_compiling = False
+                case TokenType.KEYWORD:
+                    if self.tokenizer.key_word().name.lower() in [
+                        "true",
+                        "false",
+                        "null",
+                        "this",
+                    ]:
+                        self.process_token()
+                        is_compiling = False
+                    else:
+                        print("Unexpected keyword")
+                        exit(1)
+                case TokenType.IDENTIFIER:
+                    # Look ahead one token to see what to resolve into
+                    self.process_token()
+                    token_type = self.tokenizer.token_type()
+                    if token_type == TokenType.SYMBOL:
+                        match self.tokenizer.symbol():
+                            case "(":
+                                self.process_token("(")
+                                print("identifier calling compile_expression")
+                                self.compile_expression()
+                                self.process_token(")")
+                                is_compiling = False
+                            case "[":
+                                self.process_token("[")
+                                print("identifier calling compile_expression")
+                                self.compile_expression()
+                                self.process_token("]")
+                                is_compiling = False
+                            case ".":
+                                self.process_token(".")
+                                self.process_token()
+                                self.process_token("(")
+                                self.compile_expression_list()
+                                self.process_token(")")
+                                is_compiling = False
+                            case _:
+                                is_compiling = False
+
+            token_type = self.tokenizer.token_type()
+        self._dec_indent_lvl()
+        self._write_line("</term>")
 
     def compile_expression_list(self) -> int:
+        num = 0
+        token_type = self.tokenizer.token_type()
+        # while self.tokenizer.has_more_tokens():
         return 0
