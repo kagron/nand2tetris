@@ -1,7 +1,5 @@
-from jc import tokenizer
 from jc.abstract_compile_engine import AbstractCompileEngine
-from jc.spec import SYMBOLS, KeywordType, TokenType
-from jc.tokenizer import Token
+from jc.spec import KeywordType, TokenType
 from jc.util import print_verbose
 
 
@@ -209,15 +207,61 @@ class XmlCompileEngine(AbstractCompileEngine):
         self._inc_indent_lvl()
         self.process_token("let")
         self.process_token()
+        if (
+            self.tokenizer.token_type() == TokenType.SYMBOL
+            and self.tokenizer.symbol() == "["
+        ):
+            self.process_token("[")
+            self.compile_expression()
+            self.process_token("]")
+        self.process_token("=")
+        self.compile_expression()
         self.process_token(";")
         self._dec_indent_lvl()
         self._write_line("</letStatement>")
 
     def compile_if(self):
-        pass
+        print_verbose("compile_if")
+        self._write_line("<ifStatement>")
+        self._inc_indent_lvl()
+
+        self.process_token("if")
+        self.process_token("(")
+        self.compile_expression()
+        self.process_token(")")
+
+        self.process_token("{")
+        self.compile_statements()
+        self.process_token("}")
+
+        if (
+            self.tokenizer.token_type() == TokenType.KEYWORD
+            and self.tokenizer.key_word() == KeywordType.ELSE
+        ):
+            self.process_token("else")
+            self.process_token("{")
+            self.compile_statements()
+            self.process_token("}")
+
+        self._dec_indent_lvl()
+        self._write_line("</ifStatement>")
 
     def compile_while(self):
-        pass
+        print_verbose("compile_while")
+        self._write_line("<whileStatement>")
+        self._inc_indent_lvl()
+
+        self.process_token("while")
+        self.process_token("(")
+        self.compile_expression()
+        self.process_token(")")
+
+        self.process_token("{")
+        self.compile_statements()
+        self.process_token("}")
+
+        self._dec_indent_lvl()
+        self._write_line("</whileStatement>")
 
     def compile_do(self):
         print_verbose("compile_do")
@@ -225,8 +269,11 @@ class XmlCompileEngine(AbstractCompileEngine):
         self._inc_indent_lvl()
         self.process_token("do")
         self.process_token()
+        if self.tokenizer.symbol() == ".":
+            self.process_token(".")
+            self.process_token()
         self.process_token("(")
-        expressions_created = self.compile_expression_list()
+        self.compile_expression_list()
         self.process_token(")")
         self.process_token(";")
         self._dec_indent_lvl()
@@ -266,7 +313,8 @@ class XmlCompileEngine(AbstractCompileEngine):
         op_found = False
         first_token = True
         while self.tokenizer.has_more_tokens() and not (
-            token_type == TokenType.SYMBOL and self.tokenizer.symbol() in [";", ")"]
+            token_type == TokenType.SYMBOL
+            and self.tokenizer.symbol() in [";", ")", ",", "]"]
         ):
             match token_type:
                 case TokenType.SYMBOL:
@@ -318,7 +366,6 @@ class XmlCompileEngine(AbstractCompileEngine):
                     symbol = self.tokenizer.symbol()
                     if symbol == "(":
                         self.process_token("(")
-                        print("calling compile_expression")
                         self.compile_expression()
                         self.process_token(")")
                         is_compiling = False
@@ -349,7 +396,7 @@ class XmlCompileEngine(AbstractCompileEngine):
                         match self.tokenizer.symbol():
                             case "(":
                                 self.process_token("(")
-                                self.compile_expression()
+                                self.compile_expression_list()
                                 self.process_token(")")
                                 is_compiling = False
                             case "[":
@@ -374,5 +421,16 @@ class XmlCompileEngine(AbstractCompileEngine):
     def compile_expression_list(self) -> int:
         num = 0
         token_type = self.tokenizer.token_type()
-        # while self.tokenizer.has_more_tokens():
-        return 0
+        while self.tokenizer.has_more_tokens() and not (
+            token_type == TokenType.SYMBOL and self.tokenizer.symbol() in [")", ";"]
+        ):
+            if token_type == TokenType.SYMBOL:
+                if self.tokenizer.symbol() == "(":
+                    self.compile_expression()
+                else:
+                    self.process_token()
+            else:
+                self.compile_expression()
+                num += 1
+            token_type = self.tokenizer.token_type()
+        return num
